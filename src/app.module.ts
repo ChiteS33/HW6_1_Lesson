@@ -44,7 +44,6 @@ const errorFilters = [
     }),
     // TypeOrmModule.forFeature([User]),
     PassportModule,
-    MongooseModule.forRoot('mongodb://localhost:27017/Grecha'),
     ThrottlerModule.forRoot([
       {
         ttl: 10000,

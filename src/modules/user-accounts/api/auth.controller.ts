@@ -17,10 +17,6 @@ import { RecoveryPasswordCommand } from '../application/use-cases/auth-use-cases
 import { ConfirmPasswordRecoveryCommand } from '../application/use-cases/auth-use-cases/confirm-password-use-case';
 import { inputValidationPasswordAndRecoveryCode } from '../validation/inputValidationPasswordAndRecoveryCode.validation';
 import { LocalGuard } from '../guards/local/local-guard.service';
-import {
-  UserDocument,
-  UserInputDtoValidation,
-} from '../domain/entities/users.entity';
 import { LoginUseCommand } from '../application/use-cases/auth-use-cases/login-use-case';
 import { inputValidationLoginOrEmailAndPass } from '../validation/inputValidationLoginOrEmailAndPass.validation';
 import { JwtRefreshGuard } from '../guards/jwtRefresh/refreshTokenGuard';
@@ -34,6 +30,7 @@ import { BearerGuard } from '../guards/bearer/jwt-auth.guard';
 import { PairTokens } from '../../../core/types/pairTokens.type';
 import { InfoAboutMeQuery } from '../application/query-handler/auth-query-handler/get-infoAboutMe-query-handler.-ts';
 import { ViewAboutMeType } from './view-types/auth/authViewAboutMe.type';
+import { UserInputDtoValidation } from '../validation/inputValidationBody.validation';
 
 @Controller('auth')
 export class AuthController {
@@ -62,7 +59,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Post('login')
   async login(
-    @Req() req: Request & { user: UserDocument },
+    @Req() req: Request & { user: any },
     @Body() body: inputValidationLoginOrEmailAndPass,
     @Res({ passthrough: true }) res: Response,
   ) {
@@ -87,7 +84,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Post('refresh-token')
   async refreshPairTokens(
-    @Req() req: Request & { user: UserDocument },
+    @Req() req: Request & { user: any },
     @Res({ passthrough: true }) res: Response,
   ) {
     const refreshToken = req.cookies.refreshToken as string;
@@ -129,7 +126,7 @@ export class AuthController {
   @UseGuards(JwtRefreshGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   @Post('logout')
-  async logout(@Req() req: Request & { user: UserDocument }) {
+  async logout(@Req() req: Request & { user: any }) {
     const refreshToken = req.cookies.refreshToken as string;
     await this.commandBus.execute(new LogoutCommand(refreshToken));
     return;
@@ -139,7 +136,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Get('me')
   async infoAboutMe(
-    @Req() req: Request & { user: UserDocument },
+    @Req() req: Request & { user: any },
   ): Promise<ViewAboutMeType> {
     return await this.queryBus.execute(new InfoAboutMeQuery(req.user));
   }

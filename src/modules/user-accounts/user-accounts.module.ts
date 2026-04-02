@@ -21,11 +21,6 @@ import { RegistrationInSystemUseCase } from './application/use-cases/auth-use-ca
 import { ResendEmailResendingEmailUseCase } from './application/use-cases/auth-use-cases/resend-confirmation-email-use-case';
 import { LogoutUseCase } from './application/use-cases/auth-use-cases/logout-use-case';
 import { RefreshTokensUseCase } from './application/use-cases/auth-use-cases/refresh-tokens-use-case';
-import { UserModel, UserSchema } from './domain/entities/users.entity';
-import {
-  SessionSchema,
-  SessionsModel,
-} from './domain/entities/sessions.entity';
 import { BcryptAdapter } from './application/adapters/bcryptAdapter/bcrypt.adapter';
 import { EmailAdapter } from './application/adapters/emailAdapter/email-adapter';
 import { JwtAdapter } from './application/adapters/jwtAdapter/jwt-adapter.service';
@@ -67,16 +62,7 @@ const errorStrategies = [
   JwtStrategy,
   JwtRefreshStrategy,
 ];
-const schemas = [
-  {
-    name: UserModel.name,
-    schema: UserSchema,
-  },
-  {
-    name: SessionsModel.name,
-    schema: SessionSchema,
-  },
-];
+
 const adapters = [BcryptAdapter, EmailAdapter, JwtAdapter];
 
 @Module({
@@ -87,7 +73,6 @@ const adapters = [BcryptAdapter, EmailAdapter, JwtAdapter];
       secret: settings.JWT_SECRET,
       signOptions: { expiresIn: '1h' },
     }),
-    MongooseModule.forFeature([...schemas]),
   ],
   controllers: [...controllers],
   providers: [

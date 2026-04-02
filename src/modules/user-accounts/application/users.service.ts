@@ -1,6 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { UserModel, UserModelI } from '../domain/entities/users.entity';
 import { DomainException } from '../../../core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from '../../../core/exceptions/domain-exception-codes';
 import { UsersRepository } from '../repositories/userRepositories/users.repository';
@@ -9,8 +8,8 @@ import { UserEntityType } from '../repositories/entity-types/user/userEntity.typ
 @Injectable()
 export class UsersService {
   constructor(
-    @InjectModel(UserModel.name)
-    private userModel: UserModelI,
+    // @InjectModel(UserModel.name)
+    // private userModel: UserModelI,
     @Inject(UsersRepository) private usersRepository: UsersRepository,
   ) {}
 

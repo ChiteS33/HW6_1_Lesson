@@ -2,19 +2,7 @@ import { DeleteAllController } from '../../test/test.controller';
 import { PostsController } from './api/posts.controller';
 import { CommentsController } from './api/comments.controller';
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
 import { CqrsModule } from '@nestjs/cqrs';
-import { BlogModel, BlogSchema } from './domain/entities/blogs.entity';
-import { PostModel, PostSchema } from './domain/entities/posts.entity';
-import { CommentModel, CommentSchema } from './domain/entities/comments.entity';
-import {
-  LikeForPostModel,
-  LikeForPostSchema,
-} from './domain/entities/likesForPosts.entity';
-import {
-  LikeForCommentSchema,
-  LikeForCommentsModel,
-} from './domain/entities/likesForComments.entity';
 import { CreatePostUseCase } from './application/use-cases/post-use-cases/create-post-use-case';
 import { DeletePostUseCase } from './application/use-cases/post-use-cases/delete-post-use-case';
 import { UpdatePostUseCase } from './application/use-cases/post-use-cases/update-post-use-case';
@@ -108,35 +96,9 @@ const controllers = [
   PostsController,
   CommentsController,
 ];
-const schemas = [
-  {
-    name: BlogModel.name,
-    schema: BlogSchema,
-  },
-  {
-    name: PostModel.name,
-    schema: PostSchema,
-  },
-  {
-    name: CommentModel.name,
-    schema: CommentSchema,
-  },
-  {
-    name: LikeForPostModel.name,
-    schema: LikeForPostSchema,
-  },
-  {
-    name: LikeForCommentsModel.name,
-    schema: LikeForCommentSchema,
-  },
-];
 
 @Module({
-  imports: [
-    MongooseModule.forFeature([...schemas]),
-    CqrsModule,
-    UserAccountsModule,
-  ],
+  imports: [CqrsModule, UserAccountsModule],
   controllers: [...controllers],
   providers: [
     ...services,

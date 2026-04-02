@@ -16,7 +16,6 @@ import {
 import { Request } from 'express';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { BearerGuard } from '../../user-accounts/guards/bearer/jwt-auth.guard';
-import { UserDocument } from '../../user-accounts/domain/entities/users.entity';
 import { InPutLikeStatusValidation } from '../validation/InPutLikeStatusValidation';
 import { SetLikePostCommand } from '../application/use-cases/post-use-cases/setLike-post-use-case';
 import { OptionalBearerGuard } from '../../user-accounts/guards/bearer/optional-bearer-guard.service';
@@ -51,7 +50,7 @@ export class PostsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @Put(':id/like-status')
   async setLikeForPost(
-    @Req() req: Request & { user: UserDocument },
+    @Req() req: Request & { user: any },
     @Param('id') postId: string,
     @Body() likeStatus: InPutLikeStatusValidation,
   ): Promise<void> {
@@ -67,7 +66,7 @@ export class PostsController {
   async getAllCommentsByPostId(
     @Param('id') postId: string,
     @Query() pagination: InputQueryPaginationTypeWithSearchName,
-    @Req() req: Request & { user: UserDocument },
+    @Req() req: Request & { user: any },
   ): Promise<
     FinalViewWithPaginationType<LikeEntityForCommentWithLikeStatusType>
   > {
@@ -82,7 +81,7 @@ export class PostsController {
   @HttpCode(HttpStatus.CREATED)
   @Post(':id/comments')
   async createComment(
-    @Req() req: Request & { user: UserDocument },
+    @Req() req: Request & { user: any },
     @Param('id') postId: string,
     @Body() contentDto: ContentInputDto,
   ): Promise<CommentViewType> {
@@ -101,7 +100,7 @@ export class PostsController {
   @Get()
   async getAllPosts(
     @Query() query: InputQueryPaginationTypeWithSearchName,
-    @Req() req: Request & { user: UserDocument },
+    @Req() req: Request & { user: any },
   ): Promise<FinalViewWithPaginationType<PostViewType>> {
     const userId = req.user?.id?.toString();
     return this.queryBus.execute(new GetAllPostsQuery(query, userId));
@@ -125,7 +124,7 @@ export class PostsController {
   @Get(':id')
   async findPostById(
     @Param('id') postId: string,
-    @Req() req: Request & { user: UserDocument },
+    @Req() req: Request & { user: any },
   ): Promise<PostViewWithLikesType> {
     const userId = req.user?.id?.toString();
     return await this.queryBus.execute(

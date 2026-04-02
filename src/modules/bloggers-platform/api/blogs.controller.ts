@@ -11,7 +11,6 @@ import {
 import { QueryBus } from '@nestjs/cqrs';
 import { Request } from 'express';
 import { OptionalBearerGuard } from '../../user-accounts/guards/bearer/optional-bearer-guard.service';
-import { UserDocument } from '../../user-accounts/domain/entities/users.entity';
 import { InputQueryPaginationTypeWithSearchName } from '../../../core/pagination/inputQueryPaginationTypeWithSearchName';
 import { GetAllBlogsQuery } from '../application/query-handlers/blog-query-handlers/get-allBlogs-query-handler';
 import { GetBlogsByBlogIdQuery } from '../application/query-handlers/blog-query-handlers/get-blogById-query-handler';
@@ -38,7 +37,7 @@ export class BlogsController {
   async getAllPostsByBlogId(
     @Param('id') blogId: string,
     @Query() query: InputQueryPaginationTypeWithSearchName,
-    @Req() req: Request & { user: UserDocument },
+    @Req() req: Request & { user: any },
   ): Promise<FinalViewWithPaginationType<PostViewType>> {
     const userId = req.user?.id?.toString();
     return await this.queryBus.execute(

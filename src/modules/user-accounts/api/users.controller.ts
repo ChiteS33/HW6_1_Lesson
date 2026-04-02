@@ -13,13 +13,13 @@ import {
 } from '@nestjs/common';
 import { CommandBus } from '@nestjs/cqrs';
 import { BasicAuthGuard } from '../guards/basic/basic-auth-guard.service';
-import { UserInputDtoValidation } from '../domain/entities/users.entity';
 import { DeleteUserCommand } from '../application/use-cases/user-use-cases/delete-user-use-case';
 import { CreateUserCommand } from '../application/use-cases/user-use-cases/create-user-use-case';
 import { InPutPaginationWithSearchLoginTermAndSearchEMailTerm } from '../../../core/types/inputPaginationDtoWithSearchTerms.type';
 import { UsersQueryRepository } from '../repositories/userRepositories/users.queryRepository';
 import { UserViewType } from './view-types/user/userView.type';
 import { FinalViewWithPaginationType } from '../../../core/types/finalViewWithPagination.type';
+import { UserInputDtoValidation } from '../validation/inputValidationBody.validation';
 
 @Controller(`sa/users`)
 export class UsersController {

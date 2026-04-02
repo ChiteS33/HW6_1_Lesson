@@ -13,7 +13,6 @@ import {
 import { Request } from 'express';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { BearerGuard } from '../../user-accounts/guards/bearer/jwt-auth.guard';
-import { UserDocument } from '../../user-accounts/domain/entities/users.entity';
 import { InPutLikeStatusValidation } from '../validation/InPutLikeStatusValidation';
 import { ContentInputDto } from '../domain/entities/comments.entity';
 import { UpdateCommentCommand } from '../application/use-cases/comment-use-cases/update-comment-use-case';
@@ -35,7 +34,7 @@ export class CommentsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @Put(':id/like-status')
   async setLike(
-    @Req() req: Request & { user: UserDocument },
+    @Req() req: Request & { user: any },
     @Param('id') commentId: string,
     @Body() likeStatus: InPutLikeStatusValidation,
   ): Promise<void> {
@@ -48,7 +47,7 @@ export class CommentsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @Put(':id')
   async updateComment(
-    @Req() req: Request & { user: UserDocument },
+    @Req() req: Request & { user: any },
     @Param('id') commentId: string,
     @Body() content: ContentInputDto,
   ): Promise<void> {
@@ -62,7 +61,7 @@ export class CommentsController {
   @Delete(':id')
   async deleteComment(
     @Param('id') commentId: string,
-    @Req() req: Request & { user: UserDocument },
+    @Req() req: Request & { user: any },
   ): Promise<void> {
     const userId = req.user?.id?.toString();
     return this.commandBus.execute(new DeleteCommentCommand(commentId, userId));
@@ -73,7 +72,7 @@ export class CommentsController {
   @Get(':id')
   async findCommentById(
     @Param('id') commentId: string,
-    @Req() req: Request & { user: UserDocument },
+    @Req() req: Request & { user: any },
   ): Promise<CommentViewType | null> {
     const userId = req.user?.id?.toString();
     return this.queryBus.execute(new FindCommentByIdQuery(commentId, userId));
