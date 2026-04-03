@@ -4,7 +4,7 @@ import { BcryptAdapter } from './adapters/bcryptAdapter/bcrypt.adapter';
 import { DomainException } from '../../../core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from '../../../core/exceptions/domain-exception-codes';
 import { inputValidationLoginOrEmailAndPass } from '../validation/inputValidationLoginOrEmailAndPass.validation';
-import { UserEntityType } from '../repositories/entity-types/user/userEntity.type';
+import { User } from '../domain/entities/users.entity';
 
 @Injectable()
 export class AuthService {
@@ -13,11 +13,10 @@ export class AuthService {
     @Inject(BcryptAdapter) private readonly bcryptService: BcryptAdapter,
   ) {}
 
-  async checkingUser(
-    body: inputValidationLoginOrEmailAndPass,
-  ): Promise<UserEntityType> {
-    const foundUser: UserEntityType =
-      await this.usersService.findUserByLoginOrEmail(body.loginOrEmail);
+  async checkingUser(body: inputValidationLoginOrEmailAndPass): Promise<User> {
+    const foundUser: User = await this.usersService.findUserByLoginOrEmail(
+      body.loginOrEmail,
+    );
     const isValid = await this.bcryptService.compare(
       body.password,
       foundUser.passwordHash,

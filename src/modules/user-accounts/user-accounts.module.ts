@@ -6,9 +6,7 @@ import { UsersController } from './api/users.controller';
 import { AuthController } from './api/auth.controller';
 import { SessionsController } from './api/sessions.controller';
 import { JwtModule } from '@nestjs/jwt';
-import { MongooseModule } from '@nestjs/mongoose';
 import { CqrsModule } from '@nestjs/cqrs';
-import { FindAllUsersUseCase } from './application/use-cases/sessions-use-cases/find-sessions-use-case';
 import { DeleteAllExcludeUserUseCase } from './application/use-cases/sessions-use-cases/delete-all-exclude-user-use-case';
 import { DeleteSessionByDeviceIdUseCase } from './application/use-cases/sessions-use-cases/delete-session-by-user-use-case';
 import { CreateUserUseCase } from './application/use-cases/user-use-cases/create-user-use-case';
@@ -33,13 +31,18 @@ import { PassportModule } from '@nestjs/passport';
 import { UsersRepository } from './repositories/userRepositories/users.repository';
 import { SessionsRepository } from './repositories/sessionRepositories/sessions.repository';
 import { UsersQueryRepository } from './repositories/userRepositories/users.queryRepository';
-import { InfoAboutMeQueryHandler } from './application/query-handler/auth-query-handler/get-infoAboutMe-query-handler.-ts';
+import { InfoAboutMeQueryHandler } from './application/query-handler/auth-query-handler/get-infoAboutMe-query-handler';
+import { GetAllUsersQueryHandler } from './application/query-handler/user-query-hanlder/get-allUsers-query-handler';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { User } from './domain/entities/users.entity';
+import { Session } from './domain/entities/sessions.entity';
+import { FindAllSessionsQueryHandler } from './application/query-handler/session-query-handler/find-sessions-query-handler';
+import { SessionsQueryRepository } from './repositories/sessionRepositories/sessions.queryRepository';
 
 const services = [UsersService, AuthService, SessionsService];
 const repositories = [UsersRepository, SessionsRepository];
-const queryRepositories = [UsersQueryRepository];
+const queryRepositories = [UsersQueryRepository, SessionsQueryRepository];
 const sessionUseCases = [
-  FindAllUsersUseCase,
   DeleteAllExcludeUserUseCase,
   DeleteSessionByDeviceIdUseCase,
 ];
@@ -55,6 +58,8 @@ const authUseCases = [
   RefreshTokensUseCase,
 ];
 const authQueryHandlers = [InfoAboutMeQueryHandler];
+const usersQueryHandlers = [GetAllUsersQueryHandler];
+const sessionsQueryHandler = [FindAllSessionsQueryHandler];
 const controllers = [UsersController, AuthController, SessionsController];
 const errorStrategies = [
   LocalStrategy,
@@ -69,6 +74,7 @@ const adapters = [BcryptAdapter, EmailAdapter, JwtAdapter];
   imports: [
     CqrsModule,
     PassportModule,
+    TypeOrmModule.forFeature([User, Session]),
     JwtModule.register({
       secret: settings.JWT_SECRET,
       signOptions: { expiresIn: '1h' },
@@ -85,6 +91,8 @@ const adapters = [BcryptAdapter, EmailAdapter, JwtAdapter];
     ...services,
     ...adapters,
     ...authQueryHandlers,
+    ...usersQueryHandlers,
+    ...sessionsQueryHandler,
   ],
   exports: [...errorStrategies],
 })

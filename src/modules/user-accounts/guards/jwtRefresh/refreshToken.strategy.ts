@@ -35,8 +35,7 @@ export class JwtRefreshStrategy extends PassportStrategy(
         message: 'Session not found.',
       });
     }
-
-    if (foundSession.exp !== new Date(payload.exp * 1000).toISOString()) {
+    if (foundSession.exp.getTime() !== payload.exp * 1000) {
       throw new DomainException({
         code: DomainExceptionCode.Unauthorized,
         field: 'Refresh token',

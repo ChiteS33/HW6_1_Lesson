@@ -3,13 +3,14 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { settings } from '../constants';
 import { UsersRepository } from '../../repositories/userRepositories/users.repository';
-import { UserEntityType } from '../../repositories/entity-types/user/userEntity.type';
+import { User } from '../../domain/entities/users.entity';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     @Inject(UsersRepository) private usersRepository: UsersRepository,
   ) {
+    console.log('dasdsasaddsadsasda');
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
@@ -21,12 +22,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     userId: string;
     iat: number;
     exp: number;
-  }): Promise<UserEntityType | null> {
+  }): Promise<User | null> {
     if (!payload) {
       return null;
     }
-    const foundedUser: UserEntityType | null =
-      await this.usersRepository.findUserById(payload.userId);
+    const foundedUser: User | null = await this.usersRepository.findUserById(
+      payload.userId,
+    );
     if (!foundedUser) {
       return null;
     }

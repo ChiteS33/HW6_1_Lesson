@@ -1,98 +1,48 @@
 import { Injectable } from '@nestjs/common';
-import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
-import { InsertReturningType } from '../../../../core/types/id.type';
-import { Payload } from '../../../../core/types/payload.type';
-import { sessionViewMapper } from '../../mappers/session/sessionViewMapper';
-import { SessionEntityType } from '../entity-types/session/sessionEntity.type';
-import { SessionViewType } from '../../api/view-types/sessions/sessionView.type';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, Not, Repository } from 'typeorm';
+import { Session } from '../../domain/entities/sessions.entity';
+import { log } from 'node:util';
 
 @Injectable()
 export class SessionsRepository {
-  constructor(@InjectDataSource() private datasource: DataSource) {}
-  async createSession(
-    payload: Payload,
-    sessionIp: string,
-    deviceName: string,
-  ): Promise<number> {
-    const createdSessionId: InsertReturningType = await this.datasource.query(
-      `INSERT INTO "Sessions" ("deviceId", "deviceName", "ip","userId", "exp", "iat")
-    VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING id`,
-      [
-        payload.deviceId,
-        deviceName,
-        sessionIp,
-        payload.userId,
-        new Date(payload.exp * 1000).toISOString(),
-        new Date(payload.iat * 1000).toISOString(),
-      ],
-    );
+  constructor(
+    @InjectDataSource() private datasource: DataSource,
+    @InjectRepository(Session) private sessionRepository: Repository<Session>,
+  ) {}
 
-    return createdSessionId.id;
+  async save(session: Session): Promise<string> {
+    const savedSession = await this.sessionRepository.save(session);
+    return savedSession.id.toString();
   }
 
-  async findAllSessions(userId: string): Promise<SessionViewType[]> {
-    const foundSessions: SessionEntityType[] = await this.datasource.query(
-      `SELECT *
-    FROM "Sessions" 
-    WHERE "userId" = $1`,
-      [userId],
-    );
-    return foundSessions.map(sessionViewMapper);
+  async deleteAlmostAll(userId: number, deviceId: number): Promise<void> {
+    await this.sessionRepository.softDelete({
+      userId: userId,
+      deviceId: Not(deviceId),
+    });
+    return;
   }
 
-  async deleteAlmostAll(userId: string, deviceId: string): Promise<void> {
-    await this.datasource.query(
-      `DELETE FROM "Sessions"
-     WHERE "userId" = $1
-       AND "deviceId" <> $2`,
-      [userId, deviceId],
-    );
+  async findSessionByDeviceId(deviceId: string): Promise<Session | null> {
+    const foundSession = await this.sessionRepository.findOne({
+      where: { deviceId: Number(deviceId) },
+    });
+    return foundSession ?? null;
   }
 
-  async findSessionByDeviceId(
-    deviceId: string,
-  ): Promise<SessionEntityType | null> {
-    const foundSession: SessionEntityType[] = await this.datasource.query(
-      `SELECT * FROM "Sessions" WHERE "deviceId" = $1`,
-      [deviceId],
-    );
-    return foundSession.length === 0 ? null : foundSession[0];
-  }
-
-  async deleteSessionByDeviceId(deviceId: string): Promise<void> {
-    await this.datasource.query(
-      `DELETE FROM "Sessions" WHERE "deviceId" = $1`,
-      [deviceId],
-    );
+  async deleteSessionByDeviceId(deviceId: number): Promise<void> {
+    await this.sessionRepository.softDelete({ deviceId: deviceId });
     return;
   }
 
   async findSessionByUserIdAndDeviceId(
     userId: string,
     deviceId: string,
-  ): Promise<SessionEntityType | null> {
-    const foundSession: SessionEntityType[] = await this.datasource.query(
-      `SELECT *
-      FROM "Sessions"
-    WHERE "deviceId" = $1 and "userId" = $2`,
-      [deviceId, userId],
-    );
-    return foundSession.length === 0 ? null : foundSession[0];
-  }
-
-  async updateSession(
-    sessionId: number,
-    iat: string,
-    exp: string,
-  ): Promise<void> {
-    await this.datasource.query(
-      `UPDATE "Sessions" SET "iat" = $1, "exp" = $2
-    WHERE id = $3`,
-      [iat, exp, sessionId],
-    );
-
-    return;
+  ): Promise<Session | null> {
+    const foundSession = await this.sessionRepository.findOne({
+      where: { deviceId: Number(deviceId), userId: Number(userId) },
+    });
+    return foundSession ?? null;
   }
 }

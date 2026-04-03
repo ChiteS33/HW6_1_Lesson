@@ -1,20 +1,17 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
 import { DomainException } from '../../../core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from '../../../core/exceptions/domain-exception-codes';
 import { UsersRepository } from '../repositories/userRepositories/users.repository';
-import { UserEntityType } from '../repositories/entity-types/user/userEntity.type';
+import { User } from '../domain/entities/users.entity';
 
 @Injectable()
 export class UsersService {
   constructor(
-    // @InjectModel(UserModel.name)
-    // private userModel: UserModelI,
     @Inject(UsersRepository) private usersRepository: UsersRepository,
   ) {}
 
-  async findUserById(userId: string): Promise<UserEntityType> {
-    const foundedUser: UserEntityType | null =
+  async findUserById(userId: string): Promise<User> {
+    const foundedUser: User | null =
       await this.usersRepository.findUserById(userId);
     if (!foundedUser) {
       throw new DomainException({
@@ -26,8 +23,8 @@ export class UsersService {
     return foundedUser;
   }
 
-  async findUserByLoginOrEmail(loginOrEmail: string): Promise<UserEntityType> {
-    const foundedUser: UserEntityType | null =
+  async findUserByLoginOrEmail(loginOrEmail: string): Promise<User> {
+    const foundedUser: User | null =
       await this.usersRepository.findUserByLoginOrEmail(loginOrEmail);
     if (!foundedUser) {
       throw new DomainException({

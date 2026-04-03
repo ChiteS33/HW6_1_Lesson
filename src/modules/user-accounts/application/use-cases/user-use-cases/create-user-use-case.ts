@@ -1,11 +1,11 @@
 import { Inject } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { BcryptAdapter } from '../../adapters/bcryptAdapter/bcrypt.adapter';
 import { DomainException } from '../../../../../core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from '../../../../../core/exceptions/domain-exception-codes';
 import { UsersRepository } from '../../../repositories/userRepositories/users.repository';
 import { UserInputDtoValidation } from '../../../validation/inputValidationBody.validation';
+import { User } from '../../../domain/entities/users.entity';
 
 export class CreateUserCommand {
   constructor(public inputDto: UserInputDtoValidation) {}
@@ -14,7 +14,6 @@ export class CreateUserCommand {
 @CommandHandler(CreateUserCommand)
 export class CreateUserUseCase implements ICommandHandler<CreateUserCommand> {
   constructor(
-    // @InjectModel(UserModel.name) public userModel: UserModelI,
     @Inject(UsersRepository) private usersRepository: UsersRepository,
     @Inject(BcryptAdapter) private bcryptService: BcryptAdapter,
   ) {}
@@ -42,11 +41,7 @@ export class CreateUserUseCase implements ICommandHandler<CreateUserCommand> {
       });
     }
     const hash = await this.bcryptService.hashMake(command.inputDto.password);
-
-    return await this.usersRepository.createUserByAdmin(
-      command.inputDto.login,
-      command.inputDto.email,
-      hash,
-    );
+    const newUser = User.createUserByAdmin(command.inputDto, hash);
+    return await this.usersRepository.save(newUser);
   }
 }

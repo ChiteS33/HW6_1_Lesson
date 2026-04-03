@@ -5,7 +5,7 @@ import { SessionsService } from '../../sessions.service';
 import { DomainException } from '../../../../../core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from '../../../../../core/exceptions/domain-exception-codes';
 import { SessionsRepository } from '../../../repositories/sessionRepositories/sessions.repository';
-import { SessionEntityType } from '../../../repositories/entity-types/session/sessionEntity.type';
+import { Session } from '../../../domain/entities/sessions.entity';
 
 export class DeleteSessionByDeviceIdCommand {
   constructor(
@@ -25,7 +25,7 @@ export class DeleteSessionByDeviceIdUseCase implements ICommandHandler<DeleteSes
   async execute(command: DeleteSessionByDeviceIdCommand): Promise<void> {
     const payloadRefreshToken = this.jwtAdapter.decodeJWT(command.refreshToken);
 
-    const foundSession: SessionEntityType =
+    const foundSession: Session =
       await this.sessionService.findSessionByDeviceId(command.deviceId);
 
     if (!foundSession) {
@@ -43,7 +43,9 @@ export class DeleteSessionByDeviceIdUseCase implements ICommandHandler<DeleteSes
       });
     }
 
-    await this.sessionsRepository.deleteSessionByDeviceId(command.deviceId);
+    await this.sessionsRepository.deleteSessionByDeviceId(
+      Number(command.deviceId),
+    );
     return;
   }
 }

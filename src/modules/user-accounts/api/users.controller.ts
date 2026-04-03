@@ -11,7 +11,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { CommandBus } from '@nestjs/cqrs';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { BasicAuthGuard } from '../guards/basic/basic-auth-guard.service';
 import { DeleteUserCommand } from '../application/use-cases/user-use-cases/delete-user-use-case';
 import { CreateUserCommand } from '../application/use-cases/user-use-cases/create-user-use-case';
@@ -20,11 +20,13 @@ import { UsersQueryRepository } from '../repositories/userRepositories/users.que
 import { UserViewType } from './view-types/user/userView.type';
 import { FinalViewWithPaginationType } from '../../../core/types/finalViewWithPagination.type';
 import { UserInputDtoValidation } from '../validation/inputValidationBody.validation';
+import { GetAllUsersQuery } from '../application/query-handler/user-query-hanlder/get-allUsers-query-handler';
 
 @Controller(`sa/users`)
 export class UsersController {
   constructor(
     private commandBus: CommandBus,
+    private queryBus: QueryBus,
     @Inject(UsersQueryRepository)
     private usersQueryRepository: UsersQueryRepository,
   ) {}
@@ -35,7 +37,7 @@ export class UsersController {
   async getAllUsers(
     @Query() query: InPutPaginationWithSearchLoginTermAndSearchEMailTerm,
   ): Promise<FinalViewWithPaginationType<UserViewType>> {
-    return this.usersQueryRepository.getAllUsers(query);
+    return this.queryBus.execute(new GetAllUsersQuery(query));
   }
 
   @UseGuards(BasicAuthGuard)

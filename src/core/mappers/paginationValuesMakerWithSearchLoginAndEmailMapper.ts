@@ -1,6 +1,6 @@
-import { InPutPaginationWithSearchLoginTermAndSearchEMailTerm } from '../types/inputPaginationDtoWithSearchTerms.type';
 import { PaginationWithSearchLoginTermAndSearchEMailTermForRepo } from '../types/PaginationWithSearchLoginTermAndSearchEMailTermForRepo.type';
 import { SortDirection } from '../types/enumSortDirection.type';
+import { InPutPaginationWithSearchLoginTermAndSearchEMailTerm } from '../types/inputPaginationDtoWithSearchTerms.type';
 
 export const paginationValuesMakerWithSearchLoginAndEmailMapper = (
   query: InPutPaginationWithSearchLoginTermAndSearchEMailTerm,

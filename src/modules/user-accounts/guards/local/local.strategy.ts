@@ -4,7 +4,7 @@ import { Strategy } from 'passport-local';
 import { AuthService } from '../../application/auth.service';
 import { DomainException } from '../../../../core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from '../../../../core/exceptions/domain-exception-codes';
-import { UserEntityType } from '../../repositories/entity-types/user/userEntity.type';
+import { User } from '../../domain/entities/users.entity';
 
 @Injectable()
 export class LocalStrategy extends PassportStrategy(Strategy) {
@@ -14,10 +14,7 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(
-    loginOrEmail: string,
-    password: string,
-  ): Promise<UserEntityType> {
+  async validate(loginOrEmail: string, password: string): Promise<User> {
     const user = await this.authService.checkingUser({
       loginOrEmail,
       password,

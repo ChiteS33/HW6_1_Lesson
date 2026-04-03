@@ -28,9 +28,10 @@ import { ResendEmailResendingEmailCommand } from '../application/use-cases/auth-
 import { LogoutCommand } from '../application/use-cases/auth-use-cases/logout-use-case';
 import { BearerGuard } from '../guards/bearer/jwt-auth.guard';
 import { PairTokens } from '../../../core/types/pairTokens.type';
-import { InfoAboutMeQuery } from '../application/query-handler/auth-query-handler/get-infoAboutMe-query-handler.-ts';
 import { ViewAboutMeType } from './view-types/auth/authViewAboutMe.type';
 import { UserInputDtoValidation } from '../validation/inputValidationBody.validation';
+import { InfoAboutMeQuery } from '../application/query-handler/auth-query-handler/get-infoAboutMe-query-handler';
+import { User } from '../domain/entities/users.entity';
 
 @Controller('auth')
 export class AuthController {
@@ -59,7 +60,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Post('login')
   async login(
-    @Req() req: Request & { user: any },
+    @Req() req: Request & { user: User },
     @Body() body: inputValidationLoginOrEmailAndPass,
     @Res({ passthrough: true }) res: Response,
   ) {
@@ -84,7 +85,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Post('refresh-token')
   async refreshPairTokens(
-    @Req() req: Request & { user: any },
+    @Req() req: Request & { user: User },
     @Res({ passthrough: true }) res: Response,
   ) {
     const refreshToken = req.cookies.refreshToken as string;
@@ -126,7 +127,7 @@ export class AuthController {
   @UseGuards(JwtRefreshGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   @Post('logout')
-  async logout(@Req() req: Request & { user: any }) {
+  async logout(@Req() req: Request & { user: User }) {
     const refreshToken = req.cookies.refreshToken as string;
     await this.commandBus.execute(new LogoutCommand(refreshToken));
     return;
@@ -136,7 +137,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Get('me')
   async infoAboutMe(
-    @Req() req: Request & { user: any },
+    @Req() req: Request & { user: User },
   ): Promise<ViewAboutMeType> {
     return await this.queryBus.execute(new InfoAboutMeQuery(req.user));
   }

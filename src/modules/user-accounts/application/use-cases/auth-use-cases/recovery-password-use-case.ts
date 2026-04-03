@@ -4,7 +4,7 @@ import { EmailAdapter } from '../../adapters/emailAdapter/email-adapter';
 import { DomainException } from '../../../../../core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from '../../../../../core/exceptions/domain-exception-codes';
 import { UsersRepository } from '../../../repositories/userRepositories/users.repository';
-import { UserEntityType } from '../../../repositories/entity-types/user/userEntity.type';
+import { User } from '../../../domain/entities/users.entity';
 
 export class RecoveryPasswordCommand {
   constructor(public email: string) {}
@@ -18,7 +18,7 @@ export class RecoveryPasswordUseCase implements ICommandHandler<RecoveryPassword
   ) {}
 
   async execute(command: RecoveryPasswordCommand): Promise<void> {
-    const foundUser: UserEntityType | null =
+    const foundUser: User | null =
       await this.usersRepository.findUserByLoginOrEmail(command.email);
     if (!foundUser) {
       throw new DomainException({
@@ -27,8 +27,10 @@ export class RecoveryPasswordUseCase implements ICommandHandler<RecoveryPassword
         message: 'Invalid email',
       });
     }
+
     const recoveryCode = crypto.randomUUID();
-    await this.usersRepository.updateRecoveryCode(foundUser.id, recoveryCode);
+    foundUser.setRecoveryCode(recoveryCode);
+    await this.usersRepository.save(foundUser);
     await this.emailAdapter.resendEmail(command.email, recoveryCode);
     return;
   }

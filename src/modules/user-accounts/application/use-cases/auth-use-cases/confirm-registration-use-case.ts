@@ -3,7 +3,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { DomainException } from '../../../../../core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from '../../../../../core/exceptions/domain-exception-codes';
 import { UsersRepository } from '../../../repositories/userRepositories/users.repository';
-import { UserEntityType } from '../../../repositories/entity-types/user/userEntity.type';
+import { User } from '../../../domain/entities/users.entity';
 
 export class ConfirmRegistrationCommand {
   constructor(public code: string) {}
@@ -15,7 +15,7 @@ export class ConfirmRegistrationUseCase implements ICommandHandler<ConfirmRegist
     @Inject(UsersRepository) private usersRepository: UsersRepository,
   ) {}
   async execute(command: ConfirmRegistrationCommand): Promise<void> {
-    const foundUser: UserEntityType | null =
+    const foundUser: User | null =
       await this.usersRepository.findUserByConfirmationCode(command.code);
     if (!foundUser) {
       throw new DomainException({
@@ -47,9 +47,8 @@ export class ConfirmRegistrationUseCase implements ICommandHandler<ConfirmRegist
       });
     }
 
-    const status = true;
-    await this.usersRepository.changeConfirmationStatus(status, foundUser.id);
-
+    foundUser.changeConfirmationStatus(true);
+    await this.usersRepository.save(foundUser);
     return;
   }
 }

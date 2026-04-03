@@ -11,6 +11,7 @@ import { BlogsModule } from './modules/bloggers-platform/bloggers-platform.modul
 import { AllHttpExceptionsFilter } from './core/exceptions/filters/all-exceptions.filter';
 import { DomainHttpExceptionsFilter } from './core/exceptions/filters/domain-exceptions.filter';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { User } from './modules/user-accounts/domain/entities/users.entity';
 
 const errorFilters = [
   {
@@ -38,11 +39,14 @@ const errorFilters = [
         database: configService.get('POSTGRES_DATABASE'),
         autoLoadEntities: true,
         synchronize: true,
+        extra: {
+          charset: 'utf8',
+        },
       }),
 
       inject: [ConfigService],
     }),
-    // TypeOrmModule.forFeature([User]),
+
     PassportModule,
     ThrottlerModule.forRoot([
       {

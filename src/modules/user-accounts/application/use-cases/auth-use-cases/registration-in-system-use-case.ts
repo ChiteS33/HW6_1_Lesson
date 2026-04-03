@@ -6,6 +6,7 @@ import { UsersService } from '../../users.service';
 import { UsersRepository } from '../../../repositories/userRepositories/users.repository';
 import { ConfigService } from '@nestjs/config';
 import { UserInputDtoValidation } from '../../../validation/inputValidationBody.validation';
+import { User } from '../../../domain/entities/users.entity';
 
 export class RegistrationInSystemCommand {
   constructor(public body: UserInputDtoValidation) {}
@@ -27,24 +28,13 @@ export class RegistrationInSystemUseCase implements ICommandHandler<Registration
     await this.usersService.findUserByLogin(command.body.login);
     await this.usersService.findUserByEmail(command.body.email);
 
-    const needConfirmUser = this.configService.get<boolean>(
-      'IS_USER_AUTOMATICALLY_CONFIRMED',
-    );
-
-    const createdUserId = await this.usersRepository.createUser(
-      command.body,
-      passwordHash,
-      needConfirmUser ?? false,
-    );
-
-    const createdUser = await this.usersService.findUserById(
-      createdUserId.toString(),
-    );
+    const newUser = User.createUser(command.body, passwordHash);
+    await this.usersRepository.save(newUser);
 
     this.emailAdapter.sendEmail(
       command.body.email,
       'Chites',
-      createdUser.confirmationCode,
+      newUser.confirmationCode!,
     );
     return;
   }

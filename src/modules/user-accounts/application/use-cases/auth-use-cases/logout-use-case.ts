@@ -4,6 +4,8 @@ import { JwtAdapter } from '../../adapters/jwtAdapter/jwt-adapter.service';
 import { DomainException } from '../../../../../core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from '../../../../../core/exceptions/domain-exception-codes';
 import { SessionsRepository } from '../../../repositories/sessionRepositories/sessions.repository';
+import { Payload } from '../../../../../core/types/payload.type';
+import { Session } from '../../../domain/entities/sessions.entity';
 
 export class LogoutCommand {
   constructor(public refreshToken: string) {}
@@ -19,12 +21,15 @@ export class LogoutUseCase implements ICommandHandler<LogoutCommand> {
 
   async execute(command: LogoutCommand): Promise<void> {
     this.jwtAdapter.verifyRefreshToken(command.refreshToken);
-    const payloadRefreshToken = this.jwtAdapter.decodeJWT(command.refreshToken);
-    const foundSession =
+    const payloadRefreshToken: Payload = this.jwtAdapter.decodeJWT(
+      command.refreshToken,
+    );
+    const foundSession: Session | null =
       await this.sessionsRepository.findSessionByUserIdAndDeviceId(
         payloadRefreshToken.userId,
         payloadRefreshToken.deviceId,
       );
+
     if (!foundSession) {
       throw new DomainException({
         code: DomainExceptionCode.NotFound,
@@ -33,7 +38,7 @@ export class LogoutUseCase implements ICommandHandler<LogoutCommand> {
       });
     }
     await this.sessionsRepository.deleteSessionByDeviceId(
-      foundSession.deviceId.toString(),
+      +foundSession.deviceId,
     );
     return;
   }

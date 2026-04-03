@@ -5,10 +5,12 @@ import { AuthService } from '../../auth.service';
 import { inputValidationLoginOrEmailAndPass } from '../../../validation/inputValidationLoginOrEmailAndPass.validation';
 import { Payload } from '../../../../../core/types/payload.type';
 import { SessionsRepository } from '../../../repositories/sessionRepositories/sessions.repository';
+import { User } from '../../../domain/entities/users.entity';
+import { Session } from '../../../domain/entities/sessions.entity';
 
 export class LoginUseCommand {
   constructor(
-    public user: any,
+    public user: User,
     public body: inputValidationLoginOrEmailAndPass,
     public deviceName: string,
     public sessionIp: string,
@@ -30,12 +32,13 @@ export class LoginUseCase implements ICommandHandler<LoginUseCommand> {
     const accessToken = this.jwtService.createJWT(userId);
     const refreshToken = this.jwtService.createRefreshToken(userId);
     const payload: Payload = this.jwtService.decodeJWT(refreshToken);
-    await this.sessionsRepository.createSession(
+
+    const createSession = Session.createSession(
       payload,
       command.sessionIp,
       command.deviceName,
     );
-
+    await this.sessionsRepository.save(createSession);
     return { accessToken, refreshToken };
   }
 }

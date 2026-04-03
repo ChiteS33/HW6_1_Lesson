@@ -4,7 +4,7 @@ import { BcryptAdapter } from '../../adapters/bcryptAdapter/bcrypt.adapter';
 import { DomainException } from '../../../../../core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from '../../../../../core/exceptions/domain-exception-codes';
 import { UsersRepository } from '../../../repositories/userRepositories/users.repository';
-import { UserEntityType } from '../../../repositories/entity-types/user/userEntity.type';
+import { User } from '../../../domain/entities/users.entity';
 
 export class ConfirmPasswordRecoveryCommand {
   constructor(
@@ -21,7 +21,7 @@ export class ConfirmPasswordRecoveryUseCase implements ICommandHandler<ConfirmPa
   ) {}
 
   async execute(command: ConfirmPasswordRecoveryCommand): Promise<void> {
-    const foundUser: UserEntityType | null =
+    const foundUser: User | null =
       await this.usersRepository.findUserByRecoveryCode(command.recoveryCode);
     if (!foundUser) {
       throw new DomainException({
@@ -31,7 +31,8 @@ export class ConfirmPasswordRecoveryUseCase implements ICommandHandler<ConfirmPa
       });
     }
     const newHash = await this.bcryptService.hashMake(command.newPassword);
-    await this.usersRepository.updatePassword(foundUser.id, newHash);
+    foundUser.updateEmail(newHash);
+    await this.usersRepository.save(foundUser);
     return;
   }
 }

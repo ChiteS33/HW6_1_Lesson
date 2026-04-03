@@ -1,47 +1,64 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Model } from 'mongoose';
 import { Payload } from '../../../../core/types/payload.type';
+import {
+  Column,
+  CreateDateColumn,
+  DeleteDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
-// @Schema({ versionKey: false })
-// export class SessionsModel {
-//   constructor() {}
-//   @Prop({ type: String, required: true }) userId: string;
-//   @Prop({ type: String, required: true }) deviceId: string;
-//   @Prop({ type: String, required: true }) iat: string;
-//   @Prop({ type: String, required: true }) deviceName: string;
-//   @Prop({ type: String, required: true }) ip: string;
-//   @Prop({ type: String, required: true }) exp: string;
-//
-//   public static createSession(
-//     payload: Payload,
-//     sessionIp: string,
-//     deviceName: string,
-//   ): SessionsModel {
-//     const newSession = new SessionsModel();
-//     newSession.userId = payload.userId;
-//     newSession.deviceId = payload.deviceId;
-//     newSession.iat = new Date(payload.iat * 1000).toISOString();
-//     newSession.deviceName = deviceName;
-//     newSession.ip = sessionIp;
-//     newSession.exp = new Date(payload.exp * 1000).toISOString();
-//     return newSession;
-//   }
-//
-//   updateSession(newIat: number, newExp: number): void {
-//     this.iat = new Date(newIat * 1000).toISOString();
-//     this.exp = new Date(newExp * 1000).toISOString();
-//     return;
-//   }
-// }
-//
-// export type SessionsDocument = HydratedDocument<SessionsModel>;
-//
-// export const SessionSchema = SchemaFactory.createForClass(SessionsModel);
-// SessionSchema.loadClass(SessionsModel);
-// export interface SessionModelI extends Model<SessionsModel> {
-//   createSession(
-//     payload: any,
-//     sessionIp: string,
-//     deviceName: string,
-//   ): SessionsModel;
-// }
+@Entity({ name: 'Sessions' })
+export class Session {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @CreateDateColumn({ type: 'timestamp with time zone' })
+  public createdAt: Date;
+
+  @UpdateDateColumn({ type: 'timestamp with time zone' })
+  public updatedAt: Date;
+
+  @DeleteDateColumn({ type: 'timestamp with time zone', nullable: true })
+  public deletedAt: Date | null;
+
+  @Column({ type: 'integer' })
+  userId: number;
+
+  @Column({ type: 'integer' })
+  deviceId: number;
+
+  @Column({ type: 'varchar' })
+  deviceName: string;
+
+  @Column({ type: 'varchar' })
+  ip: string;
+
+  @Column({ type: 'timestamp with time zone' })
+  iat: Date;
+
+  @Column({ type: 'timestamp with time zone' })
+  exp: Date;
+
+  public static createSession(
+    payload: Payload,
+    sessionIp: string,
+    deviceName: string,
+  ) {
+    const newSession = new Session();
+
+    newSession.userId = Number(payload.userId);
+    newSession.deviceId = Number(payload.deviceId);
+    newSession.deviceName = deviceName;
+    newSession.ip = sessionIp;
+    newSession.iat = new Date(payload.iat * 1000);
+    newSession.exp = new Date(payload.exp * 1000);
+    return newSession;
+  }
+
+  updateSession(newIat: Date, newExp: Date) {
+    this.iat = newIat;
+    this.exp = newExp;
+    return;
+  }
+}

@@ -1,8 +1,9 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { ViewAboutMeType } from '../../../api/view-types/auth/authViewAboutMe.type';
+import { User } from '../../../domain/entities/users.entity';
 
 export class InfoAboutMeQuery {
-  constructor(public user: any) {}
+  constructor(public user: User) {}
 }
 
 @QueryHandler(InfoAboutMeQuery)
