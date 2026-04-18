@@ -2,16 +2,16 @@ import { InputQueryPaginationTypeWithSearchName } from '../../../../../core/pagi
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { Inject } from '@nestjs/common';
 import { PostsQueryRepository } from '../../../repositories/postsRepositories/posts.queryRepository';
-import { paginationValuesMakerMapper } from '../../../../../core/mappers/paginationValuesMakerMapper';
+import {
+  paginationValuesForRepo,
+  paginationValuesMakerMapper,
+} from '../../../../../core/mappers/paginationValuesMakerMapper';
 import { postViewWithPagination } from '../../../mappers/post/postViewMapperWithPagination';
-import { TotalCount } from '../../../../../core/types/totalCount.type';
-import { PostEntityWithLikeCounterType } from '../../../repositories/entity-types/postEntity.type';
-import { PaginationViewType } from '../../../../../core/types/paginationViewType';
-import { LikeDislikeStatus } from '../../../domain/entities/posts.entity';
-import { postViewMapperWithNewestLikes } from '../../../mappers/post/postViewMapperWithNewestLikes';
-import { LikeEntityForPostType } from '../../../repositories/entity-types/likeEntityForPost.type';
+import { PostWithBlogName } from '../../../domain/entities/posts.entity';
 import { PostViewWithLikesType } from '../../../api/view-types/posts/postViewWithLikes.type';
-import { FinalViewWithPaginationType } from '../../../../../core/types/finalViewWithPagination.type';
+import { PostsRepository } from '../../../repositories/postsRepositories/posts.repository';
+import { postViewMapperWithNewestLikes } from '../../../mappers/post/postViewMapperWithNewestLikes';
+import { paginationViewMapper } from '../blogSa-query-handlers/get-allPostsByBlogIdSa-query-handler';
 
 export class GetAllPostsQuery {
   constructor(
@@ -25,63 +25,73 @@ export class GetAllPostsQueryHandler implements IQueryHandler<GetAllPostsQuery> 
   constructor(
     @Inject(PostsQueryRepository)
     private postsQueryRepository: PostsQueryRepository,
+    @Inject(PostsRepository) private postsRepository: PostsRepository,
   ) {}
-  async execute(
-    query: GetAllPostsQuery,
-  ): Promise<FinalViewWithPaginationType<PostViewWithLikesType>> {
-    const paginationValues = paginationValuesMakerMapper(query.query);
+  async execute(query: GetAllPostsQuery): Promise<any> {
+    const paginationValues: paginationValuesForRepo =
+      paginationValuesMakerMapper(query.query);
 
-    const foundPostsWithLikeCounter =
-      await this.postsQueryRepository.findAllPosts(
-        paginationValues,
-        query.userId,
-      );
-    const totalCount: TotalCount = foundPostsWithLikeCounter.totalCount[0];
-    const foundPosts: PostEntityWithLikeCounterType[] =
-      foundPostsWithLikeCounter.foundPostsWithLikeCounter;
-    const postsId = foundPosts.map((post) => post.id.toString());
-    const mappedCommentsPromises = postsId.map(
-      (
-        postId,
-      ): Promise<{
-        foundPost: PostEntityWithLikeCounterType;
-        newestLikes: LikeEntityForPostType[];
-      }> => {
-        return this.findPostById(postId);
+    const foundAllPosts: {
+      foundPosts: PostWithBlogName[];
+      totalCount: number;
+    } = await this.postsQueryRepository.findAllPosts(paginationValues);
+
+    const idsArray: number[] = foundAllPosts.foundPosts.map((post) => post.id);
+
+    const foundLikes: {
+      results: { postId: number; likesCount: string; dislikesCount: string }[];
+      newestLikes: {
+        addedAt: Date;
+        userId: number;
+        login: string;
+        postId: number;
+      }[];
+    } = await this.postsRepository.findLikesForPost(idsArray);
+
+    const foundStatuses: { postId: number; status: string }[] = query.userId
+      ? await this.postsRepository.foundLikeStatus(
+          idsArray,
+          Number(query.userId),
+        )
+      : [];
+
+    const postViews: PostViewWithLikesType[] = foundAllPosts.foundPosts.map(
+      (foundPost: PostWithBlogName) => {
+        const likesAndDislikesCount = foundLikes.results.find(
+          (likeElement: {
+            postId: number;
+            likesCount: string;
+            dislikesCount: string;
+          }) => likeElement.postId === foundPost.id,
+        );
+        const status = foundStatuses.find(
+          (status: { postId: number; status: string }) =>
+            status.postId === foundPost.id,
+        );
+
+        const newestLikes = foundLikes.newestLikes.filter(
+          (newestLike: {
+            addedAt: Date;
+            userId: number;
+            login: string;
+            postId: number;
+          }) => newestLike.postId === foundPost.id,
+        );
+
+        return postViewMapperWithNewestLikes(
+          foundPost,
+          likesAndDislikesCount!,
+          status!,
+          newestLikes,
+        );
       },
     );
-    const mappedPosts = await Promise.all(mappedCommentsPromises);
-    const commentsWithLikePromise = mappedPosts.map(async (post) => {
-      return {
-        ...post.foundPost,
-        likeStatus: query.userId
-          ? await this.postsQueryRepository.findLikeStatusForPost(
-              post.foundPost.id.toString(),
-              query.userId,
-            )
-          : LikeDislikeStatus.none,
-        newestLikes: post.newestLikes,
-      };
-    });
-    const postsWithLikes = await Promise.all(commentsWithLikePromise);
-    const mappedPostsToView: PostViewWithLikesType[] = postsWithLikes.map(
-      (post) =>
-        postViewMapperWithNewestLikes(post, post.likeStatus, post.newestLikes),
+
+    const params = paginationViewMapper(
+      paginationValues,
+      foundAllPosts.totalCount,
     );
 
-    const paginationForFront: PaginationViewType = {
-      pagesCount: Math.ceil(totalCount.count / paginationValues.pageSize),
-      page: paginationValues.pageNumber,
-      pageSize: paginationValues.pageSize,
-      totalCount: totalCount.count,
-    };
-
-    return postViewWithPagination(mappedPostsToView, paginationForFront);
-  }
-  private findPostById(postId: string): Promise<{
-    foundPost: PostEntityWithLikeCounterType;
-    newestLikes: LikeEntityForPostType[];
-  }> {
-    return this.postsQueryRepository.findPostByPostId(postId);
+    return postViewWithPagination(postViews, params);
   }
 }

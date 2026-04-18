@@ -10,7 +10,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     @Inject(UsersRepository) private usersRepository: UsersRepository,
   ) {
-    console.log('dasdsasaddsadsasda');
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,

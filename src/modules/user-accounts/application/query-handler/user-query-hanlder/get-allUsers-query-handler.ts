@@ -31,7 +31,7 @@ export class GetAllUsersQueryHandler implements IQueryHandler<GetAllUsersQuery> 
       paginationValuesMakerWithSearchLoginAndEmailMapper(query.query);
 
     const foundUsers: {
-      foundedUsers: User[];
+      foundUsers: User[];
       totalCount: number;
     } = await this.usersQueryRepository.getAllUsers(pagination);
     const params: PaginationViewType = {
@@ -41,7 +41,7 @@ export class GetAllUsersQueryHandler implements IQueryHandler<GetAllUsersQuery> 
       totalCount: foundUsers.totalCount,
     };
     const mappedUsers: UserViewType[] =
-      foundUsers.foundedUsers.map(userViewMapper);
+      foundUsers.foundUsers.map(userViewMapper);
 
     return userViewMapperWithPagination(mappedUsers, params);
   }

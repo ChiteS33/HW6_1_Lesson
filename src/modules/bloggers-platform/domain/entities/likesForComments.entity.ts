@@ -1,38 +1,42 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { LikeDislikeStatus } from './posts.entity';
-import { HydratedDocument, Model } from 'mongoose';
-import { InputLikeDTOForComment } from '../../api/input-dto-types/likesForComment/likeInputDtoForComment.type';
+import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { BaseDbEntity } from '../../../../core/entity/baseDb.entity';
+import { LikeDislikeStatus } from '../../../../core/types/enumLikeOrDislike.type';
+import { User } from '../../../user-accounts/domain/entities/users.entity';
+import { Comment } from './comments.entity';
 
-// @Schema({ versionKey: false })
-// export class LikeForCommentsModel {
-//   constructor() {}
-//   @Prop({ type: String, required: true }) userId: string;
-//   @Prop({ type: String, required: true }) login: string;
-//   @Prop({ type: String, required: true }) commentId: string;
-//   @Prop({ type: String, enum: LikeDislikeStatus, required: true })
-//   status: LikeDislikeStatus;
-//   @Prop({ type: Date, required: true }) data: Date;
-//
-//   public static createLikeForComment(dto: InputLikeDTOForComment) {
-//     const newLike = new LikeForCommentsModel();
-//     newLike.userId = dto.user._id.toString();
-//     newLike.login = dto.user.login;
-//     newLike.commentId = dto.commentId;
-//     newLike.status = dto.likeStatus;
-//     newLike.data = new Date();
-//     return newLike;
-//   }
-//
-//   public updateCommentLikeStatus(likeStatus: LikeDislikeStatus) {
-//     this.status = likeStatus;
-//   }
-// }
-//
-// export type LikeForCommentDocument = HydratedDocument<LikeForCommentsModel>;
-//
-// export const LikeForCommentSchema =
-//   SchemaFactory.createForClass(LikeForCommentsModel);
-// LikeForCommentSchema.loadClass(LikeForCommentsModel);
-// export interface LikeForCommentsModelI extends Model<LikeForCommentDocument> {
-//   createLikeForComment(dto: any): LikeForCommentDocument;
-// }
+@Entity({ name: 'LikesForComments' })
+export class LikesForComment extends BaseDbEntity {
+  @Column({ type: 'integer' })
+  userId: number;
+
+  @Column({ type: 'integer' })
+  commentId: number;
+
+  @Column({ type: 'varchar' })
+  login: string;
+
+  @Column({ type: 'varchar' })
+  status: string;
+
+  @ManyToOne(() => Comment, (comment) => comment.likes)
+  @JoinColumn({ name: 'commentId' })
+  comment: Comment;
+
+  public static createLikeForComment(
+    commentId: number,
+    likeStatus: LikeDislikeStatus,
+    user: User,
+  ) {
+    const newLikeForComment = new LikesForComment();
+    newLikeForComment.userId = user.id;
+    newLikeForComment.commentId = commentId;
+    newLikeForComment.login = user.login;
+    newLikeForComment.status = likeStatus;
+    return newLikeForComment;
+  }
+
+  updateLikeForComment(likeStatus: LikeDislikeStatus) {
+    this.status = likeStatus;
+    return;
+  }
+}

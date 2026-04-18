@@ -6,6 +6,16 @@ export type PostViewType = {
   blogId: string;
   blogName: string;
   createdAt: string;
-  likesCount: number;
-  dislikesCount: number;
+  extendedLikesInfo: {
+    likesCount: number;
+    dislikesCount: number;
+    myStatus: string;
+    newestLikes: [
+      {
+        addedAt: Date;
+        userId: string;
+        login: string;
+      },
+    ];
+  };
 };

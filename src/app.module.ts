@@ -1,6 +1,5 @@
 import { configModule } from './config-dynamic-module';
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
 import { PassportModule } from '@nestjs/passport';
 import { APP_FILTER } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
@@ -11,7 +10,6 @@ import { BlogsModule } from './modules/bloggers-platform/bloggers-platform.modul
 import { AllHttpExceptionsFilter } from './core/exceptions/filters/all-exceptions.filter';
 import { DomainHttpExceptionsFilter } from './core/exceptions/filters/domain-exceptions.filter';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { User } from './modules/user-accounts/domain/entities/users.entity';
 
 const errorFilters = [
   {
@@ -38,7 +36,7 @@ const errorFilters = [
         password: configService.get('POSTGRES_PASSWORD'),
         database: configService.get('POSTGRES_DATABASE'),
         autoLoadEntities: true,
-        synchronize: true,
+        synchronize: false,
         extra: {
           charset: 'utf8',
         },

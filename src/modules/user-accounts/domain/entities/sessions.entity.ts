@@ -1,27 +1,9 @@
 import { Payload } from '../../../../core/types/payload.type';
-import {
-  Column,
-  CreateDateColumn,
-  DeleteDateColumn,
-  Entity,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Column, Entity } from 'typeorm';
+import { BaseDbEntity } from '../../../../core/entity/baseDb.entity';
 
 @Entity({ name: 'Sessions' })
-export class Session {
-  @PrimaryGeneratedColumn()
-  id: number;
-
-  @CreateDateColumn({ type: 'timestamp with time zone' })
-  public createdAt: Date;
-
-  @UpdateDateColumn({ type: 'timestamp with time zone' })
-  public updatedAt: Date;
-
-  @DeleteDateColumn({ type: 'timestamp with time zone', nullable: true })
-  public deletedAt: Date | null;
-
+export class Session extends BaseDbEntity {
   @Column({ type: 'integer' })
   userId: number;
 

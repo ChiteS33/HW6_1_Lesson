@@ -1,7 +1,7 @@
-import { BlogEntityType } from '../../repositories/entity-types/blogEntity.type';
 import { BlogViewType } from '../../api/view-types/blogs/blogView.type';
+import { Blog } from '../../domain/entities/blogs.entity';
 
-export const blogViewMapper = (blog: BlogEntityType): BlogViewType => {
+export const blogViewMapper = (blog: Blog): BlogViewType => {
   return {
     id: blog.id.toString(),
     name: blog.name,

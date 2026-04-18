@@ -1,11 +1,13 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { PostInputDtoValidationForCreate } from '../../../domain/entities/posts.entity';
+import {
+  Post,
+  PostInputDtoValidationForCreate,
+} from '../../../domain/entities/posts.entity';
 import { DomainException } from '../../../../../core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from '../../../../../core/exceptions/domain-exception-codes';
 import { BlogsRepository } from '../../../repositories/blogsRepositories/blogs.repository';
 import { PostsRepository } from '../../../repositories/postsRepositories/posts.repository';
-import { PostsQueryRepository } from '../../../repositories/postsRepositories/posts.queryRepository';
 
 export class CreatePostCommand {
   constructor(public inputDto: PostInputDtoValidationForCreate) {}
@@ -16,13 +18,11 @@ export class CreatePostUseCase implements ICommandHandler<CreatePostCommand> {
   constructor(
     @Inject(BlogsRepository) private blogsRepository: BlogsRepository,
     @Inject(PostsRepository) private postsRepository: PostsRepository,
-    @Inject(PostsQueryRepository)
-    private postsQueryRepository: PostsQueryRepository,
   ) {}
 
   async execute(command: CreatePostCommand): Promise<string> {
     const foundBlog = await this.blogsRepository.findBlogByBlogId(
-      command.inputDto.blogId,
+      Number(command.inputDto.blogId),
     );
 
     if (!foundBlog) {
@@ -32,12 +32,11 @@ export class CreatePostUseCase implements ICommandHandler<CreatePostCommand> {
         message: 'Blog not found.',
       });
     }
-    const createdPostId: string = await this.postsRepository.createPost(
-      foundBlog.id.toString(),
-      foundBlog.name,
-      command.inputDto,
-    );
 
-    return createdPostId;
+    const createPost = Post.createPost({
+      ...command.inputDto,
+      blogId: Number(command.inputDto.blogId),
+    });
+    return await this.postsRepository.save(createPost);
   }
 }

@@ -1,5 +1,8 @@
 import { Matches } from 'class-validator';
 import { IsStringWithTrim } from '../../../../core/decorators/validation/is-string-with-trim';
+import { Column, Entity, OneToMany } from 'typeorm';
+import { Post } from './posts.entity';
+import { BaseDbEntity } from '../../../../core/entity/baseDb.entity';
 
 export class BlogInputDto {
   @IsStringWithTrim(1, 15)
@@ -13,35 +16,36 @@ export class BlogInputDto {
   websiteUrl: string;
 }
 
-// @Schema({ versionKey: false })
-// export class BlogModel {
-//   @Prop({ type: String, required: true }) name: string;
-//   @Prop({ type: String, required: true }) description: string;
-//   @Prop({ type: String, required: true }) websiteUrl: string;
-//   @Prop({ type: Date, required: true }) createdAt: Date;
-//   @Prop({ type: Boolean, required: true }) isMembership: boolean;
-//
-//   public static createBlog(dto: BlogInputDto): BlogModel {
-//     const newBlog = new BlogModel();
-//     newBlog.name = dto.name;
-//     newBlog.description = dto.description;
-//     newBlog.websiteUrl = dto.websiteUrl;
-//     newBlog.createdAt = new Date();
-//     newBlog.isMembership = false;
-//     return newBlog;
-//   }
-//
-//   updateBlog(blogInputDto: BlogInputDto) {
-//     this.name = blogInputDto.name;
-//     this.description = blogInputDto.description;
-//     this.websiteUrl = blogInputDto.websiteUrl;
-//     return;
-//   }
-// }
-//
-// export const BlogSchema = SchemaFactory.createForClass(BlogModel);
-// BlogSchema.loadClass(BlogModel);
-// export type BlogDocument = HydratedDocument<BlogModel>;
-// export interface BlogModelI extends Model<BlogDocument> {
-//   createBlog(dto: BlogInputDto): BlogModel;
-// }
+@Entity({ name: 'Blogs' })
+export class Blog extends BaseDbEntity {
+  @Column({ type: 'varchar', collation: 'C' })
+  name: string;
+
+  @Column({ type: 'varchar' })
+  description: string;
+
+  @Column({ type: 'varchar' })
+  websiteUrl: string;
+
+  @Column({ type: 'boolean' })
+  isMembership: boolean;
+
+  @OneToMany(() => Post, (post) => post.blog)
+  posts: Post[];
+
+  public static createBlog(dto: BlogInputDto): Blog {
+    const newBlog = new Blog();
+    newBlog.name = dto.name;
+    newBlog.description = dto.description;
+    newBlog.websiteUrl = dto.websiteUrl;
+    newBlog.isMembership = false;
+    return newBlog;
+  }
+
+  updateBlog(dto: BlogInputDto) {
+    this.name = dto.name;
+    this.description = dto.description;
+    this.websiteUrl = dto.websiteUrl;
+    return;
+  }
+}

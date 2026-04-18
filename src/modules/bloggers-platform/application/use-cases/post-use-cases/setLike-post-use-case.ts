@@ -1,46 +1,58 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { LikeDislikeStatus } from '../../../domain/entities/posts.entity';
-import { PostService } from '../../posts.service';
 import { LikesForPostRepository } from '../../../repositories/likesForPostRepositories/post.likes.repository';
-import { LikeEntityForPostType } from '../../../repositories/entity-types/likeEntityForPost.type';
+import { User } from '../../../../user-accounts/domain/entities/users.entity';
+import { LikeForPost } from '../../../domain/entities/likesForPosts.entity';
+import { LikeDislikeStatus } from '../../../../../core/types/enumLikeOrDislike.type';
+import { Post } from '../../../domain/entities/posts.entity';
+import { DomainException } from '../../../../../core/exceptions/domain-exceptions';
+import { DomainExceptionCode } from '../../../../../core/exceptions/domain-exception-codes';
+import { PostsRepository } from '../../../repositories/postsRepositories/posts.repository';
 
 export class SetLikePostCommand {
   constructor(
     public postId: string,
     public likeStatus: LikeDislikeStatus,
-    public user: any,
+    public user: User,
   ) {}
 }
 
 @CommandHandler(SetLikePostCommand)
 export class SetLikePostUseCase implements ICommandHandler<SetLikePostCommand> {
   constructor(
-    @Inject(PostService) private postService: PostService,
+    @Inject(PostsRepository) private postsRepository: PostsRepository,
     @Inject(LikesForPostRepository)
     private likesForPostRepository: LikesForPostRepository,
   ) {}
   async execute(command: SetLikePostCommand): Promise<void> {
-    await this.postService.findPostById(command.postId);
-    const foundPostLike: LikeEntityForPostType[] =
+    await this.findPostById(command.postId);
+    const foundPostLike: LikeForPost | null =
       await this.likesForPostRepository.findLikeByUserIdAndPostId(
-        command.user.id,
-        command.postId,
+        Number(command.user.id),
+        Number(command.postId),
       );
-    if (!foundPostLike[0]) {
-      await this.likesForPostRepository.createLikeForPost(
-        command.user.id,
-        command.user.login,
-        command.postId,
+    if (!foundPostLike) {
+      const createLikeForPost: LikeForPost = LikeForPost.createLikeForPost(
+        Number(command.postId),
         command.likeStatus,
+        command.user,
       );
+      await this.likesForPostRepository.save(createLikeForPost);
       return;
     }
-    await this.likesForPostRepository.updateLikeForPost(
-      command.user.id,
-      command.postId,
-      command.likeStatus,
-    );
+    foundPostLike.updateLikeForPost(command.likeStatus);
+    await this.likesForPostRepository.save(foundPostLike);
     return;
+  }
+
+  private async findPostById(postId: string): Promise<Post> {
+    const foundPost = await this.postsRepository.findPostsById(Number(postId));
+    if (!foundPost.foundPost)
+      throw new DomainException({
+        code: DomainExceptionCode.NotFound,
+        field: 'postId',
+        message: 'Post not found',
+      });
+    return foundPost.foundPost;
   }
 }

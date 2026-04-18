@@ -1,18 +1,16 @@
 import { Inject } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { PostService } from '../../posts.service';
 import { CommentsRepository } from '../../../repositories/commentsRepositories/comments.repository';
-import { CommentsQueryRepository } from '../../../repositories/commentsRepositories/comments.queryRepository';
-import { CommentViewType } from '../../../api/view-types/comments/commentView.type';
-import { LikeDislikeStatus } from '../../../domain/entities/posts.entity';
-import { commentsViewMapperWithCount } from '../../../mappers/comment/commentsViewMapperWithCount';
-import { CommentEntityWithLikeCounterType } from '../../../repositories/entity-types/commentEntityWithLikeStatus.type';
+import { PostsRepository } from '../../../repositories/postsRepositories/posts.repository';
+import { DomainException } from '../../../../../core/exceptions/domain-exceptions';
+import { DomainExceptionCode } from '../../../../../core/exceptions/domain-exception-codes';
+import { Comment } from '../../../domain/entities/comments.entity';
 
 export class CreateCommentCommand {
   constructor(
     public postId: string,
     public content: string,
-    public userId: string,
+    public userId: number,
     public userLogin: string,
   ) {}
 }
@@ -20,26 +18,28 @@ export class CreateCommentCommand {
 @CommandHandler(CreateCommentCommand)
 export class CreateCommentUseCase implements ICommandHandler<CreateCommentCommand> {
   constructor(
-    @Inject(PostService) private postService: PostService,
+    @Inject(PostsRepository) private postsRepository: PostsRepository,
     @Inject(CommentsRepository) private commentsRepository: CommentsRepository,
-    @Inject(CommentsQueryRepository)
-    private commentsQueryRepository: CommentsQueryRepository,
   ) {}
-  async execute(command: CreateCommentCommand): Promise<CommentViewType> {
-    await this.postService.findPostById(command.postId);
-    const createdCommentId: string =
-      await this.commentsRepository.createComment(
-        command.postId,
-        command.content,
-        command.userId,
-        command.userLogin,
-      );
-    const foundComment: CommentEntityWithLikeCounterType =
-      await this.commentsQueryRepository.findCommentById(
-        createdCommentId,
-        command.userId,
-      );
+  async execute(command: CreateCommentCommand): Promise<string> {
+    await this.findPost(command.postId);
+    const newComment = Comment.createComment(
+      command.content,
+      command.postId,
+      command.userId.toString(),
+      command.userLogin,
+    );
+    return this.commentsRepository.save(newComment);
+  }
 
-    return commentsViewMapperWithCount(foundComment, LikeDislikeStatus.none);
+  private async findPost(postId: string) {
+    const foundPost = await this.postsRepository.findPostsById(Number(postId));
+    if (!foundPost.foundPost)
+      throw new DomainException({
+        code: DomainExceptionCode.NotFound,
+        field: 'PostId',
+        message: 'Post not found',
+      });
+    return foundPost;
   }
 }

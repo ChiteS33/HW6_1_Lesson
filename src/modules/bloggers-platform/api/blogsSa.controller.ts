@@ -30,6 +30,7 @@ import { BlogViewType } from './view-types/blogs/blogView.type';
 import { PostViewType } from './view-types/posts/postView.type';
 import { PostViewWithLikesType } from './view-types/posts/postViewWithLikes.type';
 import { FindPostByPostIdQuery } from '../application/query-handlers/post-query-handlers/get-postById-query-handler';
+import { GetBlogsByBlogIdQuery } from '../application/query-handlers/blog-query-handlers/get-blogById-query-handler';
 
 @Controller('sa/blogs')
 export class BlogsControllerSa {
@@ -45,14 +46,19 @@ export class BlogsControllerSa {
     @Query() query: InputQueryPaginationTypeWithSearchName,
   ): Promise<FinalViewWithPaginationType<BlogViewType>> {
     return await this.queryBus.execute(new GetAllBlogsSaQuery(query));
-  }
+  } //
 
   @UseGuards(BasicAuthGuard)
   @HttpCode(HttpStatus.CREATED)
   @Post()
   async createBlog(@Body() blogInputDto: BlogInputDto): Promise<BlogViewType> {
-    return await this.commandBus.execute(new CreateBlogSaCommand(blogInputDto));
-  }
+    const createdBlogId: string = await this.commandBus.execute(
+      new CreateBlogSaCommand(blogInputDto),
+    );
+    return await this.queryBus.execute(
+      new GetBlogsByBlogIdQuery(createdBlogId),
+    );
+  } //
 
   @UseGuards(BasicAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -64,14 +70,14 @@ export class BlogsControllerSa {
     await this.commandBus.execute(
       new UpdateBlogSaCommand(blogId, blogInputDto),
     );
-  }
+  } //
 
   @UseGuards(BasicAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete(':id')
   async deleteBlog(@Param('id') blogId: string): Promise<void> {
     await this.commandBus.execute(new DeleteBlogSaCommand(blogId));
-  }
+  } //
 
   @UseGuards(BasicAuthGuard)
   @HttpCode(HttpStatus.CREATED)
@@ -84,7 +90,7 @@ export class BlogsControllerSa {
       new CreatePostByBlogIdSaCommand(blogId, postInputDto),
     );
     return this.queryBus.execute(new FindPostByPostIdQuery(id));
-  }
+  } //
 
   @UseGuards(BasicAuthGuard)
   @HttpCode(HttpStatus.OK)
@@ -94,7 +100,7 @@ export class BlogsControllerSa {
     @Query() query: inPutValidationPagination,
   ): Promise<FinalViewWithPaginationType<PostViewType>> {
     return this.queryBus.execute(new GetAllPostsByBlogIdSaQuery(blogId, query));
-  }
+  } //
 
   @UseGuards(BasicAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -108,7 +114,7 @@ export class BlogsControllerSa {
       new UpdatePostByBlogIdSaCommand(blogId, postId, postInputDto),
     );
     return;
-  }
+  } //
 
   @UseGuards(BasicAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -121,5 +127,5 @@ export class BlogsControllerSa {
       new DeletePostByBlogIdSaCommand(postId, blogId),
     );
     return;
-  }
+  } //
 }

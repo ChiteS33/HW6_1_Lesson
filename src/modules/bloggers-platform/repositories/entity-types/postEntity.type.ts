@@ -1,4 +1,4 @@
-export type PostEntityWithLikeCounterType = {
+export type PostEntityWithLike = {
   id: number;
   title: string;
   shortDescription: string;
@@ -6,6 +6,4 @@ export type PostEntityWithLikeCounterType = {
   blogId: number;
   blogName: string;
   createdAt: Date;
-  likes_count: number;
-  dislikes_count: number;
 };

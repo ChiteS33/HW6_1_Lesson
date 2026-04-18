@@ -18,7 +18,7 @@ export class UsersQueryRepository {
 
   async getAllUsers(
     query: PaginationWithSearchLoginTermAndSearchEMailTermForRepo,
-  ): Promise<{ foundedUsers: User[]; totalCount: number }> {
+  ): Promise<{ foundUsers: User[]; totalCount: number }> {
     const skip = (query.pageNumber - 1) * query.pageSize;
     const limit = query.pageSize;
     const allowedSortFields = ['login', 'createdAt', 'email', 'id'];
@@ -37,13 +37,12 @@ export class UsersQueryRepository {
         emailTerm: `%${query.searchEmailTerm}%`,
       })
       .orderBy(`user.${safeSortBy}`, sortDirection)
-      .addOrderBy('user.id', sortDirection)
       .skip(skip)
       .take(limit);
-    const foundedUsers = await queryBuilder.getMany();
+    const foundUsers = await queryBuilder.getMany();
     const totalCount = await queryBuilder.getCount();
 
-    return { foundedUsers, totalCount };
+    return { foundUsers, totalCount };
   }
 
   async findUserByUserId(userId: string): Promise<UserViewType> {

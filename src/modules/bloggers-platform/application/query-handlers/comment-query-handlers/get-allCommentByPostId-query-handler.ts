@@ -1,95 +1,105 @@
-import { CommentsQueryRepository } from '../../../repositories/commentsRepositories/comments.queryRepository';
 import { Inject } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
+import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { SortDirection } from '../../../../../core/types/enumSortDirection.type';
+import { PostsRepository } from '../../../repositories/postsRepositories/posts.repository';
+import { Post } from '../../../domain/entities/posts.entity';
+import { DomainException } from '../../../../../core/exceptions/domain-exceptions';
+import { DomainExceptionCode } from '../../../../../core/exceptions/domain-exception-codes';
 import {
   paginationValuesForRepo,
   paginationValuesMakerMapper,
 } from '../../../../../core/mappers/paginationValuesMakerMapper';
-import { commentsViewMapperWithPagination } from '../../../mappers/comment/commentsViewMapperWithPagination';
-import { PostService } from '../../posts.service';
-import { IsEnum, IsOptional, IsString } from 'class-validator';
-import { SortDirection } from '../../../../../core/types/enumSortDirection.type';
-import { CommentEntityWithLikeCounterType } from '../../../repositories/entity-types/commentEntityWithLikeStatus.type';
-import { TotalCount } from '../../../../../core/types/totalCount.type';
+
+import { CommentsQueryRepository } from '../../../repositories/commentsRepositories/comments.queryRepository';
+import { CommentsRepository } from '../../../repositories/commentsRepositories/comments.repository';
+import { Comment } from '../../../domain/entities/comments.entity';
 import { commentsViewMapperWithCount } from '../../../mappers/comment/commentsViewMapperWithCount';
-import { LikeDislikeStatus } from '../../../domain/entities/posts.entity';
-import { FinalViewWithPaginationType } from '../../../../../core/types/finalViewWithPagination.type';
-import { LikeEntityForCommentWithLikeStatusType } from '../../../repositories/entity-types/likeEntityForComment.type';
+import { paginationViewMapper } from '../blogSa-query-handlers/get-allPostsByBlogIdSa-query-handler';
+import { commentsViewMapperWithPagination } from '../../../mappers/comment/commentsViewMapperWithPagination';
+import { CommentViewType } from '../../../api/view-types/comments/commentView.type';
 
 export class FindAllCommentsByPostIdQuery {
   constructor(
     public postId: string,
-    public pagination: InputQueryPaginationType,
-    public userId?: string,
+    public query: InputQueryPaginationType,
+    public userId?: number,
   ) {}
 }
 @QueryHandler(FindAllCommentsByPostIdQuery)
 export class FindAllCommentsByPostIdQueryHandler implements IQueryHandler<FindAllCommentsByPostIdQuery> {
   constructor(
+    @Inject(PostsRepository) private postsRepository: PostsRepository,
     @Inject(CommentsQueryRepository)
-    private readonly commentsQueryRepository: CommentsQueryRepository,
-    @Inject(PostService) private postService: PostService,
+    private commentsQueryRepository: CommentsQueryRepository,
+    @Inject(CommentsRepository) private commentsRepository: CommentsRepository,
   ) {}
 
-  async execute(
-    query: FindAllCommentsByPostIdQuery,
-  ): Promise<
-    FinalViewWithPaginationType<LikeEntityForCommentWithLikeStatusType>
-  > {
-    await this.postService.findPostById(query.postId);
+  async execute(query: FindAllCommentsByPostIdQuery): Promise<any> {
+    await this.findPostById(query.postId);
     const paginationValues: paginationValuesForRepo =
-      paginationValuesMakerMapper(query.pagination);
+      paginationValuesMakerMapper(query.query);
 
-    const foundCommentsWithLikeCounterAndTotalCount =
-      await this.commentsQueryRepository.findAllCommentsByPostId(
-        query.postId,
-        paginationValues,
-      );
-    const foundComments: CommentEntityWithLikeCounterType[] =
-      foundCommentsWithLikeCounterAndTotalCount.foundCommentsWithLikeCounter;
-    const totalCount: TotalCount[] =
-      foundCommentsWithLikeCounterAndTotalCount.totalCount;
-    const commentsIds = foundComments.map(
-      (comment: CommentEntityWithLikeCounterType) => comment.id.toString(),
+    const foundAllComments: {
+      foundComments: Comment[];
+      totalCount: number;
+    } = await this.commentsQueryRepository.findAllCommentsByPostId(
+      Number(query.postId),
+      paginationValues,
     );
-    const mappedCommentsPromises = commentsIds.map(
-      (commentId): Promise<CommentEntityWithLikeCounterType> => {
-        return this.findCommentById(commentId);
+
+    const idsArray: number[] = foundAllComments.foundComments.map(
+      (comment) => comment.id,
+    );
+
+    const foundLikes: {
+      commentId: number;
+      likesCount: number;
+      dislikesCount: number;
+    }[] = await this.commentsRepository.findCounters(idsArray);
+
+    const foundStatuses: { commentId: number; status: string }[] = query.userId
+      ? await this.commentsRepository.findLikeStatus(idsArray, query.userId)
+      : [];
+
+    const commentViews: CommentViewType[] = foundAllComments.foundComments.map(
+      (foundComment: Comment) => {
+        const likesAndDislikesCount = foundLikes.find(
+          (likeElement: {
+            commentId: number;
+            likesCount: number;
+            dislikesCount: number;
+          }) => likeElement.commentId === foundComment.id,
+        );
+        const status = foundStatuses.find(
+          (status: { commentId: number; status: string }) =>
+            status.commentId === foundComment.id,
+        );
+
+        return commentsViewMapperWithCount(
+          foundComment,
+          likesAndDislikesCount!,
+          status!,
+        );
       },
     );
-    const mappedComments = await Promise.all(mappedCommentsPromises);
-    const commentsWithLikesPromise = mappedComments.map(async (comment) => {
-      return {
-        ...comment,
-        likeStatus: query.userId
-          ? await this.commentsQueryRepository.findLikeStatusForComment(
-              comment.id.toString(),
-              query.userId,
-            )
-          : LikeDislikeStatus.none,
-      };
-    });
-    const commentsWithLikes = await Promise.all(commentsWithLikesPromise);
-    const mappedCommentsToView = commentsWithLikes.map((comment) =>
-      commentsViewMapperWithCount(comment, comment.likeStatus),
-    );
 
-    const paginationView = {
-      pagesCount: Math.ceil(totalCount[0].count / paginationValues.pageSize),
-      page: paginationValues.pageNumber,
-      pageSize: paginationValues.pageSize,
-      totalCount: totalCount[0].count,
-    };
-
-    return commentsViewMapperWithPagination(
-      mappedCommentsToView,
-      paginationView,
+    const params = paginationViewMapper(
+      paginationValues,
+      foundAllComments.totalCount,
     );
+    return commentsViewMapperWithPagination(commentViews, params);
   }
-  private findCommentById(
-    commentId: string,
-  ): Promise<CommentEntityWithLikeCounterType> {
-    return this.commentsQueryRepository.findCommentById(commentId);
+
+  private async findPostById(postId: string): Promise<Post> {
+    const foundPost = await this.postsRepository.findPostsById(Number(postId));
+    if (!foundPost.foundPost)
+      throw new DomainException({
+        code: DomainExceptionCode.NotFound,
+        field: 'postId',
+        message: 'Post not found',
+      });
+    return foundPost.foundPost;
   }
 }
 

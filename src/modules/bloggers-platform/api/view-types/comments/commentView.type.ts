@@ -1,4 +1,4 @@
-import { LikeDislikeStatus } from '../../../domain/entities/posts.entity';
+import { LikeDislikeStatus } from '../../../../../core/types/enumLikeOrDislike.type';
 
 export type CommentViewType = {
   id: string;

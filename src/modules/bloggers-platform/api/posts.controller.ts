@@ -18,7 +18,6 @@ import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { BearerGuard } from '../../user-accounts/guards/bearer/jwt-auth.guard';
 import { InPutLikeStatusValidation } from '../validation/InPutLikeStatusValidation';
 import { SetLikePostCommand } from '../application/use-cases/post-use-cases/setLike-post-use-case';
-import { OptionalBearerGuard } from '../../user-accounts/guards/bearer/optional-bearer-guard.service';
 import { ContentInputDto } from '../domain/entities/comments.entity';
 import { CreateCommentCommand } from '../application/use-cases/comment-use-cases/create-comment-use-case';
 import { BasicAuthGuard } from '../../user-accounts/guards/basic/basic-auth-guard.service';
@@ -36,6 +35,9 @@ import { FindPostByPostIdQuery } from '../application/query-handlers/post-query-
 import { PostViewWithLikesType } from './view-types/posts/postViewWithLikes.type';
 import { FindAllCommentsByPostIdQuery } from '../application/query-handlers/comment-query-handlers/get-allCommentByPostId-query-handler';
 import { LikeEntityForCommentWithLikeStatusType } from '../repositories/entity-types/likeEntityForComment.type';
+import { User } from '../../user-accounts/domain/entities/users.entity';
+import { OptionalBearerGuard } from '../../user-accounts/guards/bearer/optional-bearer-guard';
+import { FindCommentByIdQuery } from '../application/query-handlers/comment-query-handlers/get-commentById-query-handler';
 
 @Controller('posts')
 export class PostsController {
@@ -50,7 +52,7 @@ export class PostsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @Put(':id/like-status')
   async setLikeForPost(
-    @Req() req: Request & { user: any },
+    @Req() req: Request & { user: User },
     @Param('id') postId: string,
     @Body() likeStatus: InPutLikeStatusValidation,
   ): Promise<void> {
@@ -58,34 +60,31 @@ export class PostsController {
       new SetLikePostCommand(postId, likeStatus.likeStatus, req.user),
     );
     return;
-  } //
-
+  }
   @UseGuards(OptionalBearerGuard)
   @HttpCode(HttpStatus.OK)
   @Get(':id/comments')
   async getAllCommentsByPostId(
     @Param('id') postId: string,
     @Query() pagination: InputQueryPaginationTypeWithSearchName,
-    @Req() req: Request & { user: any },
+    @Req() req: Request & { user: User },
   ): Promise<
     FinalViewWithPaginationType<LikeEntityForCommentWithLikeStatusType>
   > {
-    const userId = req.user?.id?.toString();
-
     return this.queryBus.execute(
-      new FindAllCommentsByPostIdQuery(postId, pagination, userId),
+      new FindAllCommentsByPostIdQuery(postId, pagination, req.user?.id),
     );
-  } //
+  }
 
   @UseGuards(BearerGuard)
   @HttpCode(HttpStatus.CREATED)
   @Post(':id/comments')
   async createComment(
-    @Req() req: Request & { user: any },
+    @Req() req: Request & { user: User },
     @Param('id') postId: string,
     @Body() contentDto: ContentInputDto,
   ): Promise<CommentViewType> {
-    return await this.commandBus.execute(
+    const createdCommentId: string = await this.commandBus.execute(
       new CreateCommentCommand(
         postId,
         contentDto.content,
@@ -93,18 +92,23 @@ export class PostsController {
         req.user.login,
       ),
     );
-  } //
+
+    return await this.queryBus.execute(
+      new FindCommentByIdQuery(createdCommentId, req.user.id),
+    );
+  }
 
   @UseGuards(OptionalBearerGuard)
   @HttpCode(HttpStatus.OK)
   @Get()
   async getAllPosts(
     @Query() query: InputQueryPaginationTypeWithSearchName,
-    @Req() req: Request & { user: any },
+    @Req() req: Request & { user: User | null },
   ): Promise<FinalViewWithPaginationType<PostViewType>> {
-    const userId = req.user?.id?.toString();
+    const userId = req.user?.id?.toString() ?? null;
+
     return this.queryBus.execute(new GetAllPostsQuery(query, userId));
-  }
+  } //
 
   @UseGuards(BasicAuthGuard)
   @HttpCode(HttpStatus.CREATED)
@@ -115,22 +119,20 @@ export class PostsController {
     const postId: string = await this.commandBus.execute(
       new CreatePostCommand(postInputDto),
     );
-
     return this.queryBus.execute(new FindPostByPostIdQuery(postId));
-  }
+  } //
 
   @UseGuards(OptionalBearerGuard)
   @HttpCode(HttpStatus.OK)
   @Get(':id')
   async findPostById(
     @Param('id') postId: string,
-    @Req() req: Request & { user: any },
+    @Req() req: Request & { user: User },
   ): Promise<PostViewWithLikesType> {
-    const userId = req.user?.id?.toString();
     return await this.queryBus.execute(
-      new FindPostByPostIdQuery(postId, userId),
+      new FindPostByPostIdQuery(postId, req.user?.id?.toString()),
     );
-  }
+  } //
 
   @UseGuards(BasicAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)

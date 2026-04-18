@@ -1,63 +1,34 @@
 import { Injectable } from '@nestjs/common';
-import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
-import {
-  LikeEntityForCommentType,
-  LikeEntityForCommentWithLikeStatusType,
-} from '../entity-types/likeEntityForComment.type';
-import { LikeDislikeStatus } from '../../domain/entities/posts.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { LikesForComment } from '../../domain/entities/likesForComments.entity';
 
 @Injectable()
 export class LikesForCommentRepository {
-  constructor(@InjectDataSource() public dataSource: DataSource) {}
-  async createLike(
-    userId: string,
-    login: string,
-    commentId: string,
-    status: LikeDislikeStatus,
-  ): Promise<LikeEntityForCommentType> {
-    const createdLikeId: LikeEntityForCommentType[] =
-      await this.dataSource.query(
-        `INSERT INTO "LikesForComments" ("userId", "login", "commentId","status", "createdAt" ) 
-    VALUES ($1, $2, $3, $4, NOW())`,
-        [userId, login, commentId, status],
-      );
-    return createdLikeId[0] ?? null;
-  }
+  constructor(
+    @InjectRepository(LikesForComment)
+    private likeRepository: Repository<LikesForComment>,
+  ) {}
 
-  async updateLikeForComment(
-    commentId: string,
-    likeStatus: LikeDislikeStatus,
-  ): Promise<void> {
-    await this.dataSource.query(
-      `UPDATE "LikesForComments"
-      SET "status" = $1
-      WHERE "commentId" = $2`,
-      [likeStatus, commentId],
-    );
-    return;
+  async save(like: LikesForComment): Promise<string> {
+    const createdLike = await this.likeRepository.save(like);
+    return createdLike.id.toString();
   }
 
   async findLikeByUserIdAndCommentId(
-    userId: string,
-    commentId: string,
-  ): Promise<LikeEntityForCommentType> {
-    const foundLike: LikeEntityForCommentWithLikeStatusType[] =
-      await this.dataSource.query(
-        `SELECT *
-      FROM "LikesForComments" 
-      WHERE "userId" = $1 AND "commentId" = $2 `,
-        [userId, commentId],
-      );
-    return foundLike[0];
+    userId: number,
+    commentId: number,
+  ): Promise<LikesForComment | null> {
+    return this.likeRepository.findOne({
+      where: {
+        userId: userId,
+        commentId: commentId,
+      },
+    });
   }
 
-  async deleteLikesForComment(commentId: string): Promise<void> {
-    await this.dataSource.query(
-      `DELETE FROM "LikesForComments"
-    WHERE "commentId" = $1 `,
-      [commentId],
-    );
+  async deleteLikesForComment(commentId: number): Promise<void> {
+    await this.likeRepository.softDelete(commentId);
     return;
   }
 }

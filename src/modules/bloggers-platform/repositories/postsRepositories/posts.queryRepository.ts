@@ -1,40 +1,18 @@
-import { Inject, Injectable } from '@nestjs/common';
-
-import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
-import { LikeDislikeStatus } from '../../domain/entities/posts.entity';
-import { BlogsService } from '../../application/blogs.service';
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Post, PostWithBlogName } from '../../domain/entities/posts.entity';
 import { paginationValuesForRepo } from '../../../../core/mappers/paginationValuesMakerMapper';
-import { TotalCount } from '../../../../core/types/totalCount.type';
-import { PostEntityWithLikeCounterType } from '../entity-types/postEntity.type';
-import { LikeEntityForPostType } from '../entity-types/likeEntityForPost.type';
 
 @Injectable()
 export class PostsQueryRepository {
   constructor(
-    @Inject(BlogsService) private blogsService: BlogsService,
-    @InjectDataSource() private dataSource: DataSource,
+    @InjectRepository(Post) private postRepository: Repository<Post>,
   ) {}
 
-  async findLikeStatusForPost(
-    postId: string,
-    userId?: string,
-  ): Promise<LikeDislikeStatus> {
-    const result = await this.dataSource.query(
-      `SELECT "status"
-   FROM "LikesForPosts" l
-   WHERE "postId" = $1 AND "userId" = $2`,
-      [postId, userId],
-    );
-    return result[0]?.status ?? LikeDislikeStatus.none;
-  }
-
-  async findAllPosts(
-    paginationValues: paginationValuesForRepo,
-    userId?: string,
-  ): Promise<{
-    foundPostsWithLikeCounter: PostEntityWithLikeCounterType[];
-    totalCount: TotalCount[];
+  async findAllPosts(paginationValues: paginationValuesForRepo): Promise<{
+    foundPosts: PostWithBlogName[];
+    totalCount: number;
   }> {
     const skip = (paginationValues.pageNumber - 1) * paginationValues.pageSize;
     const limit = paginationValues.pageSize;
@@ -44,114 +22,92 @@ export class PostsQueryRepository {
       'shortDescription',
       'content',
       'blogId',
-      'blogName',
       'createdAt',
+      'blogName',
     ];
-    const allowedDirections = ['ASC', 'DESC'];
+
     const safeSortBy = allowedSortFields.includes(paginationValues.sortBy)
       ? paginationValues.sortBy
       : 'createdAt';
-    const safeSortDirection = allowedDirections.includes(
-      paginationValues.sortDirection.toUpperCase(),
-    )
-      ? paginationValues.sortDirection.toUpperCase()
-      : 'DESC';
+    const sortDirection =
+      paginationValues.sortDirection === 'asc' ? 'ASC' : 'DESC';
 
-    const foundPosts: PostEntityWithLikeCounterType[] =
-      await this.dataSource.query(
-        `SELECT *
-      FROM "Posts" p
-      ORDER BY "${safeSortBy}" ${safeSortDirection}
-      LIMIT ${limit} OFFSET ${skip}`,
-      );
+    const queryBuilder = this.postRepository
+      .createQueryBuilder('post')
+      .select([
+        'post.id as "id"',
+        'post.title as "title"',
+        'post.shortDescription as "shortDescription"',
+        'post.content as "content"',
+        'post.blogId as "blogId"',
+        'post.createdAt as "createdAt"',
+        'blog.name as "blogName"',
+      ])
+      .leftJoin('Blog', 'blog', 'blog.id = post.blogId')
+      .orderBy(
+        safeSortBy === 'blogName' ? 'blog.name' : `post.${safeSortBy}`,
+        sortDirection,
+      )
+      .offset(skip)
+      .limit(limit);
 
-    const totalCount: TotalCount[] = await this.dataSource.query(
-      `SELECT COUNT(*) :: int as count
-     FROM "Posts"`,
-    );
+    const countBuilder = this.postRepository
+      .createQueryBuilder('post')
+      .where('post.deletedAt IS NULL');
 
-    return { foundPostsWithLikeCounter: foundPosts, totalCount };
-  }
+    const foundPosts: PostWithBlogName[] = await queryBuilder.getRawMany();
+    const totalCount: number = await countBuilder.getCount();
 
-  async findNewestLikesForPost(
-    postId: string,
-  ): Promise<LikeEntityForPostType[]> {
-    return await this.dataSource.query(
-      `SELECT *
-      FROM "LikesForPosts" l
-      WHERE l."postId" = $1 AND l."status" = $2
-       ORDER BY "createdAt" DESC
-       LIMIT 3`,
-      [postId, 'Like'],
-    );
-  }
-
-  async findPostByPostId(postId: string): Promise<{
-    foundPost: PostEntityWithLikeCounterType;
-    newestLikes: LikeEntityForPostType[];
-  }> {
-    const foundPost: PostEntityWithLikeCounterType[] =
-      await this.dataSource.query(
-        `SELECT
-                 p.*,
-         COUNT(*) FILTER (WHERE l."status" = 'Like')::int AS likes_count,
-         COUNT(*) FILTER (WHERE l."status" = 'Dislike')::int AS dislikes_count
-    FROM "Posts" p
-    LEFT JOIN "LikesForPosts" l
-    ON l."postId" = p."id"
-    WHERE p."id" = $1
-    GROUP BY p."id";`,
-        [postId],
-      );
-    const newestLikes = await this.findNewestLikesForPost(postId);
-    return { foundPost: foundPost[0], newestLikes };
+    return { foundPosts, totalCount };
   }
 
   async findAllPostsByBlogId(
-    blogId: string,
-    pagination: paginationValuesForRepo,
-    userId?: string,
+    blogId: number,
+    paginationValues: paginationValuesForRepo,
   ): Promise<{
-    foundPosts: PostEntityWithLikeCounterType[];
-    totalCount: TotalCount[];
+    foundPosts: PostWithBlogName[];
+    totalCount: number;
   }> {
-    await this.blogsService.findBlogById(blogId);
-    const skip = (pagination.pageNumber - 1) * pagination.pageSize;
-    const limit = pagination.pageSize;
+    const skip = (paginationValues.pageNumber - 1) * paginationValues.pageSize;
+    const limit = paginationValues.pageSize;
     const allowedSortFields = [
       'id',
       'title',
       'shortDescription',
       'content',
       'blogId',
-      'blogName',
       'createdAt',
+      'blogName',
     ];
-    const allowedDirections = ['ASC', 'DESC'];
-    const safeSortBy = allowedSortFields.includes(pagination.sortBy)
-      ? pagination.sortBy
+    const safeSortBy = allowedSortFields.includes(paginationValues.sortBy)
+      ? paginationValues.sortBy
       : 'createdAt';
-    const safeSortDirection = allowedDirections.includes(
-      pagination.sortDirection.toUpperCase(),
-    )
-      ? pagination.sortDirection.toUpperCase()
-      : 'DESC';
+    const sortDirection =
+      paginationValues.sortDirection === 'asc' ? 'ASC' : 'DESC';
+    const queryBuilder = this.postRepository
+      .createQueryBuilder('post')
+      .select([
+        'post.id as "id"',
+        'post.title as "title"',
+        'post.shortDescription as "shortDescription" ',
+        'post.content as "content" ',
+        'post.blogId as "blogId" ',
+        'post.createdAt as "createdAt"',
+        'blog.name as "blogName"',
+      ])
+      .leftJoin('Blog', 'blog', 'blog.id = post.blogId')
+      .where(`post.blogId = :blogId`, { blogId: blogId })
+      .orderBy(`post.${safeSortBy}`, sortDirection)
+      .offset(skip)
+      .limit(limit);
 
-    const foundPosts: PostEntityWithLikeCounterType[] =
-      await this.dataSource.query(
-        `SELECT * 
-    FROM "Posts" 
-    WHERE "blogId" = $1
-    ORDER BY "${safeSortBy}" ${safeSortDirection}
-    LIMIT $2 OFFSET $3`,
-        [blogId, limit, skip],
-      );
-    const totalCount: TotalCount[] = await this.dataSource.query(
-      `SELECT COUNT(*) :: int as count
-      FROM "Posts"
-      WHERE "blogId" = $1`,
-      [blogId],
-    );
+    const countBuilder = this.postRepository
+      .createQueryBuilder('post')
+      .where(`post.blogId = :blogId`, { blogId: blogId });
+
+    const foundPosts: PostWithBlogName[] = await queryBuilder.getRawMany();
+    const totalCount: number = await countBuilder.getCount();
+
     return { foundPosts, totalCount };
   }
 }

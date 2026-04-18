@@ -1,10 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
-import { add } from 'date-fns';
-import { InsertReturningType } from '../../../../core/types/id.type';
 import { UserEntityType } from '../entity-types/user/userEntity.type';
-import { UserInputDtoValidation } from '../../validation/inputValidationBody.validation';
 import { User } from '../../domain/entities/users.entity';
 
 @Injectable()

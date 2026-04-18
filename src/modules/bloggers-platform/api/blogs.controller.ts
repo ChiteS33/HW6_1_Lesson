@@ -10,7 +10,6 @@ import {
 } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
 import { Request } from 'express';
-import { OptionalBearerGuard } from '../../user-accounts/guards/bearer/optional-bearer-guard.service';
 import { InputQueryPaginationTypeWithSearchName } from '../../../core/pagination/inputQueryPaginationTypeWithSearchName';
 import { GetAllBlogsQuery } from '../application/query-handlers/blog-query-handlers/get-allBlogs-query-handler';
 import { GetBlogsByBlogIdQuery } from '../application/query-handlers/blog-query-handlers/get-blogById-query-handler';
@@ -18,6 +17,8 @@ import { GetAllPostsByBlogIdQuery } from '../application/query-handlers/blog-que
 import { BlogViewType } from './view-types/blogs/blogView.type';
 import { PostViewType } from './view-types/posts/postView.type';
 import { FinalViewWithPaginationType } from '../../../core/types/finalViewWithPagination.type';
+import { User } from '../../user-accounts/domain/entities/users.entity';
+import { OptionalBearerGuard } from '../../user-accounts/guards/bearer/optional-bearer-guard';
 
 @Controller('blogs')
 export class BlogsController {
@@ -37,7 +38,7 @@ export class BlogsController {
   async getAllPostsByBlogId(
     @Param('id') blogId: string,
     @Query() query: InputQueryPaginationTypeWithSearchName,
-    @Req() req: Request & { user: any },
+    @Req() req: Request & { user: User },
   ): Promise<FinalViewWithPaginationType<PostViewType>> {
     const userId = req.user?.id?.toString();
     return await this.queryBus.execute(

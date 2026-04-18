@@ -4,6 +4,10 @@ import { Inject } from '@nestjs/common';
 import { InputQueryPaginationTypeWithSearchName } from '../../../../../core/pagination/inputQueryPaginationTypeWithSearchName';
 import { FinalViewWithPaginationType } from '../../../../../core/types/finalViewWithPagination.type';
 import { BlogViewType } from '../../../api/view-types/blogs/blogView.type';
+import { PaginationViewType } from '../../../../../core/types/paginationViewType';
+import { paginationValuesMakerWithSearchNameTermMapper } from '../../../../../core/mappers/paginationValuesMakerWithSearchNameTermMapper';
+import { blogViewMapperWithPagination } from '../../../mappers/blog/blogViewMapperWithPagination';
+import { blogViewMapper } from '../../../mappers/blog/blogViewMapper';
 
 export class GetAllBlogsSaQuery {
   constructor(public query: InputQueryPaginationTypeWithSearchName) {}
@@ -18,6 +22,21 @@ export class GetAllBlogsSaQueryHandler implements IQueryHandler<GetAllBlogsSaQue
   async execute(
     query: GetAllBlogsSaQuery,
   ): Promise<FinalViewWithPaginationType<BlogViewType>> {
-    return await this.blogsQueryRepository.getAllBlogs(query.query);
+    const paginationValues = paginationValuesMakerWithSearchNameTermMapper(
+      query.query,
+    );
+    const foundBlogs =
+      await this.blogsQueryRepository.getAllBlogs(paginationValues);
+
+    const params: PaginationViewType = {
+      pagesCount: Math.ceil(foundBlogs.totalCount / paginationValues.pageSize),
+      page: paginationValues.pageNumber,
+      pageSize: paginationValues.pageSize,
+      totalCount: foundBlogs.totalCount,
+    };
+    return blogViewMapperWithPagination(
+      foundBlogs.foundBlogs.map(blogViewMapper),
+      params,
+    );
   }
 }

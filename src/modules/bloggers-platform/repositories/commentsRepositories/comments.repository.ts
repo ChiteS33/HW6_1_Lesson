@@ -1,54 +1,61 @@
 import { Injectable } from '@nestjs/common';
-import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
-import { InsertReturningType } from '../../../../core/types/id.type';
-import { CommentEntityType } from '../../../user-accounts/repositories/entity-types/comment/commentEntity.type';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Comment } from '../../domain/entities/comments.entity';
+import { LikesForComment } from '../../domain/entities/likesForComments.entity';
 
 @Injectable()
 export class CommentsRepository {
-  constructor(@InjectDataSource() private dataSource: DataSource) {}
+  constructor(
+    @InjectRepository(Comment) private commentRepository: Repository<Comment>,
+    @InjectRepository(LikesForComment)
+    private likeRepository: Repository<LikesForComment>,
+  ) {}
 
-  async createComment(
-    postId: string,
-    content: string,
-    userId: string,
-    userLogin: string,
-  ): Promise<string> {
-    const createdCommentId: InsertReturningType[] = await this.dataSource.query(
-      `INSERT INTO "Comments" ("content", "postId", "userId", "userLogin", "createdAt") 
-    VALUES ($1, $2, $3, $4,NOW())
-    RETURNING "id"`,
-      [content, postId, userId, userLogin],
-    );
-    return createdCommentId[0].id.toString();
+  async save(comment: Comment): Promise<string> {
+    const createdComment = await this.commentRepository.save(comment);
+    return createdComment.id.toString();
   }
 
-  async findCommentById(commentId: string): Promise<CommentEntityType> {
-    const foundComment: CommentEntityType[] = await this.dataSource.query(
-      `SELECT *
-    FROM "Comments"
-    WHERE "id" = $1`,
-      [commentId],
-    );
-    return foundComment[0];
+  async findCommentById(commentId: number): Promise<Comment | null> {
+    const foundComment = await this.commentRepository.findOne({
+      where: { id: commentId },
+    });
+    return foundComment ?? null;
   }
 
-  async updateComment(commentId: string, content: string): Promise<void> {
-    await this.dataSource.query(
-      `UPDATE "Comments"
-    SET "content" = $1
-    WHERE "id" = $2`,
-      [content, +commentId],
-    );
-    return;
+  async findLikeStatus(
+    commentIds: number[],
+    userId: number,
+  ): Promise<{ commentId: number; status: string }[]> {
+    return this.likeRepository
+      .createQueryBuilder('lfc')
+      .select(['lfc."commentId" as "commentId"', 'lfc.status as "status"'])
+      .where('lfc."commentId" IN (:...commentIds)', { commentIds })
+      .andWhere('lfc."userId" = :userId', { userId })
+      .getRawMany();
   }
 
-  async deleteComment(commentId: string): Promise<void> {
-    await this.dataSource.query(
-      `DELETE FROM "Comments"
-       WHERE "id" = $1`,
-      [commentId],
-    );
+  async findCounters(commentIds: number[]) {
+    if (!commentIds[0]) return [];
+    return this.likeRepository
+      .createQueryBuilder('l')
+      .select([
+        'l."commentId" as "commentId"',
+        'COUNT(CASE WHEN l.status = \'Like\' THEN 1 END) as "likesCount"',
+        'COUNT(CASE WHEN l.status = \'Dislike\' THEN 1 END) as "dislikesCount"',
+      ])
+      .where('l.commentId IN  (:...commentIds)', { commentIds })
+      .groupBy('l.commentId')
+      .getRawMany<{
+        commentId: number;
+        likesCount: number;
+        dislikesCount: number;
+      }>();
+  }
+
+  async deleteComment(commentId: number): Promise<void> {
+    await this.commentRepository.softDelete(commentId);
     return;
   }
 }

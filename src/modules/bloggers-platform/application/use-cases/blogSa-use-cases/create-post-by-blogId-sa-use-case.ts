@@ -1,5 +1,8 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { PostInputDtoValidation } from '../../../domain/entities/posts.entity';
+import {
+  Post,
+  PostInputDtoValidation,
+} from '../../../domain/entities/posts.entity';
 import { DomainException } from '../../../../../core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from '../../../../../core/exceptions/domain-exception-codes';
 import { Inject } from '@nestjs/common';
@@ -25,7 +28,7 @@ export class CreatePostByBlogIdSaUseCase implements ICommandHandler<CreatePostBy
 
   async execute(command: CreatePostByBlogIdSaCommand): Promise<string> {
     const foundBlog = await this.blogsRepository.findBlogByBlogId(
-      command.blogId,
+      Number(command.blogId),
     );
     if (!foundBlog) {
       throw new DomainException({
@@ -34,10 +37,10 @@ export class CreatePostByBlogIdSaUseCase implements ICommandHandler<CreatePostBy
         message: 'Blog not found.',
       });
     }
-    return await this.postsRepository.createPost(
-      command.blogId,
-      foundBlog.name,
-      command.postInputDto,
-    );
+    const newPost = Post.createPost({
+      ...command.postInputDto,
+      blogId: Number(command.blogId),
+    });
+    return await this.postsRepository.save(newPost);
   }
 }

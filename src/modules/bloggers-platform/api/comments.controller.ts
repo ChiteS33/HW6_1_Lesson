@@ -17,11 +17,11 @@ import { InPutLikeStatusValidation } from '../validation/InPutLikeStatusValidati
 import { ContentInputDto } from '../domain/entities/comments.entity';
 import { UpdateCommentCommand } from '../application/use-cases/comment-use-cases/update-comment-use-case';
 import { DeleteCommentCommand } from '../application/use-cases/comment-use-cases/delete-comment-use-case';
-import { OptionalBearerGuard } from '../../user-accounts/guards/bearer/optional-bearer-guard.service';
-
 import { CommentViewType } from './view-types/comments/commentView.type';
 import { FindCommentByIdQuery } from '../application/query-handlers/comment-query-handlers/get-commentById-query-handler';
 import { SetLikeCommentsCommand } from '../application/use-cases/comment-use-cases/setLike-comments-use-case';
+import { User } from '../../user-accounts/domain/entities/users.entity';
+import { OptionalBearerGuard } from '../../user-accounts/guards/bearer/optional-bearer-guard';
 
 @Controller('comments')
 export class CommentsController {
@@ -34,20 +34,20 @@ export class CommentsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @Put(':id/like-status')
   async setLike(
-    @Req() req: Request & { user: any },
+    @Req() req: Request & { user: User },
     @Param('id') commentId: string,
     @Body() likeStatus: InPutLikeStatusValidation,
   ): Promise<void> {
     await this.commandBus.execute(
       new SetLikeCommentsCommand(commentId, likeStatus.likeStatus, req.user),
-    ); //
+    );
   }
 
   @UseGuards(BearerGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   @Put(':id')
   async updateComment(
-    @Req() req: Request & { user: any },
+    @Req() req: Request & { user: User },
     @Param('id') commentId: string,
     @Body() content: ContentInputDto,
   ): Promise<void> {
@@ -61,9 +61,9 @@ export class CommentsController {
   @Delete(':id')
   async deleteComment(
     @Param('id') commentId: string,
-    @Req() req: Request & { user: any },
+    @Req() req: Request & { user: User },
   ): Promise<void> {
-    const userId = req.user?.id?.toString();
+    const userId = req.user?.id;
     return this.commandBus.execute(new DeleteCommentCommand(commentId, userId));
   } //
 
@@ -72,9 +72,9 @@ export class CommentsController {
   @Get(':id')
   async findCommentById(
     @Param('id') commentId: string,
-    @Req() req: Request & { user: any },
-  ): Promise<CommentViewType | null> {
-    const userId = req.user?.id?.toString();
+    @Req() req: Request & { user: User },
+  ): Promise<CommentViewType> {
+    const userId = req.user?.id;
     return this.queryBus.execute(new FindCommentByIdQuery(commentId, userId));
-  } //
+  }
 }

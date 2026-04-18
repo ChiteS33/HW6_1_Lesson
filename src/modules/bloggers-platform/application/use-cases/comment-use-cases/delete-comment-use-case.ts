@@ -4,13 +4,13 @@ import { DomainException } from '../../../../../core/exceptions/domain-exception
 import { DomainExceptionCode } from '../../../../../core/exceptions/domain-exception-codes';
 import { CommentsService } from '../../comments.service';
 import { CommentsRepository } from '../../../repositories/commentsRepositories/comments.repository';
-import { CommentEntityType } from '../../../../user-accounts/repositories/entity-types/comment/commentEntity.type';
 import { LikesForCommentRepository } from '../../../repositories/likesForCommentRepositories/comment.likes.repository';
+import { Comment } from '../../../domain/entities/comments.entity';
 
 export class DeleteCommentCommand {
   constructor(
     public commentId: string,
-    public userId: string,
+    public userId: number,
   ) {}
 }
 
@@ -23,8 +23,9 @@ export class DeleteCommentUseCase implements ICommandHandler<DeleteCommentComman
     private likesForCommentRepository: LikesForCommentRepository,
   ) {}
   async execute(command: DeleteCommentCommand): Promise<void> {
-    const foundComment: CommentEntityType =
-      await this.commentsService.findCommentById(command.commentId);
+    const foundComment: Comment = await this.findCommentById(
+      Number(command.commentId),
+    );
 
     if (foundComment.userId !== +command.userId) {
       throw new DomainException({
@@ -34,8 +35,20 @@ export class DeleteCommentUseCase implements ICommandHandler<DeleteCommentComman
       });
     }
     await this.likesForCommentRepository.deleteLikesForComment(
-      command.commentId,
+      Number(command.commentId),
     );
-    await this.commentsRepository.deleteComment(command.commentId);
+    await this.commentsRepository.deleteComment(Number(command.commentId));
+  }
+
+  private async findCommentById(commentId: number): Promise<Comment> {
+    const foundComment =
+      await this.commentsRepository.findCommentById(commentId);
+    if (!foundComment)
+      throw new DomainException({
+        code: DomainExceptionCode.NotFound,
+        field: 'commentId',
+        message: 'Comment not found',
+      });
+    return foundComment;
   }
 }

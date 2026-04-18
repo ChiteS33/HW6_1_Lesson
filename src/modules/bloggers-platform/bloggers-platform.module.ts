@@ -39,6 +39,12 @@ import { UpdatePostByBlogIdSaUseCase } from './application/use-cases/post-use-ca
 import { SetLikeCommentsUseCase } from './application/use-cases/comment-use-cases/setLike-comments-use-case';
 import { GetCommentByIdQueryHandler } from './application/query-handlers/comment-query-handlers/get-commentById-query-handler';
 import { GetPostByPostIdQueryHandler } from './application/query-handlers/post-query-handlers/get-postById-query-handler';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Blog } from './domain/entities/blogs.entity';
+import { Post } from './domain/entities/posts.entity';
+import { LikeForPost } from './domain/entities/likesForPosts.entity';
+import { LikesForComment } from './domain/entities/likesForComments.entity';
+import { Comment } from './domain/entities/comments.entity';
 import { FindAllCommentsByPostIdQueryHandler } from './application/query-handlers/comment-query-handlers/get-allCommentByPostId-query-handler';
 
 const services = [BlogsService, PostService, CommentsService];
@@ -98,7 +104,17 @@ const controllers = [
 ];
 
 @Module({
-  imports: [CqrsModule, UserAccountsModule],
+  imports: [
+    CqrsModule,
+    UserAccountsModule,
+    TypeOrmModule.forFeature([
+      Blog,
+      Post,
+      Comment,
+      LikeForPost,
+      LikesForComment,
+    ]),
+  ],
   controllers: [...controllers],
   providers: [
     ...services,

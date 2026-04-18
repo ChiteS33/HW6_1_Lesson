@@ -1,59 +1,74 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { Inject } from '@nestjs/common';
-import { CommentsQueryRepository } from '../../../repositories/commentsRepositories/comments.queryRepository';
-import { LikeDislikeStatus } from '../../../domain/entities/posts.entity';
 import { commentsViewMapperWithCount } from '../../../mappers/comment/commentsViewMapperWithCount';
 import { DomainException } from '../../../../../core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from '../../../../../core/exceptions/domain-exception-codes';
 import { LikesForCommentRepository } from '../../../repositories/likesForCommentRepositories/comment.likes.repository';
-import { CommentEntityWithLikeCounterType } from '../../../repositories/entity-types/commentEntityWithLikeStatus.type';
-import { LikeEntityForCommentType } from '../../../repositories/entity-types/likeEntityForComment.type';
+import { LikeDislikeStatus } from '../../../../../core/types/enumLikeOrDislike.type';
+import { CommentViewType } from '../../../api/view-types/comments/commentView.type';
+import { CommentsRepository } from '../../../repositories/commentsRepositories/comments.repository';
+import { Comment } from '../../../domain/entities/comments.entity';
+import { LikesForComment } from '../../../domain/entities/likesForComments.entity';
 
 export class FindCommentByIdQuery {
   constructor(
     public commentId: string,
-    public userId?: string,
+    public userId?: number,
   ) {}
 }
 
 @QueryHandler(FindCommentByIdQuery)
 export class GetCommentByIdQueryHandler implements IQueryHandler<FindCommentByIdQuery> {
   constructor(
-    @Inject(CommentsQueryRepository)
-    private commentsQueryRepository: CommentsQueryRepository,
+    @Inject(CommentsRepository) private commentRepository: CommentsRepository,
     @Inject(LikesForCommentRepository)
     private likesForCommentRepository: LikesForCommentRepository,
   ) {}
-  async execute(query: FindCommentByIdQuery): Promise<any> {
-    const foundCommentEntity: CommentEntityWithLikeCounterType =
-      await this.commentsQueryRepository.findCommentById(
-        query.commentId,
+  async execute(query: FindCommentByIdQuery): Promise<CommentViewType> {
+    const foundComment: Comment = await this.findCommentById(query.commentId);
+
+    const counters: {
+      commentId: number;
+      likesCount: number;
+      dislikesCount: number;
+    }[] = await this.commentRepository.findCounters([Number(query.commentId)]);
+
+    let myStatus = {
+      commentId: Number(query.commentId),
+      status: LikeDislikeStatus.none,
+    };
+
+    if (!query.userId) {
+      return commentsViewMapperWithCount(foundComment, counters[0], myStatus);
+    }
+
+    const foundLikeForComment: LikesForComment | null =
+      await this.likesForCommentRepository.findLikeByUserIdAndCommentId(
         query.userId,
+        Number(query.commentId),
       );
 
-    if (!foundCommentEntity) {
+    if (!foundLikeForComment) {
+      return commentsViewMapperWithCount(foundComment, counters[0], myStatus);
+    }
+    myStatus = {
+      commentId: Number(query.commentId),
+      status: foundLikeForComment.status as LikeDislikeStatus,
+    };
+
+    return commentsViewMapperWithCount(foundComment, counters[0], myStatus);
+  }
+
+  private async findCommentById(commentId: string): Promise<Comment> {
+    const foundComment = await this.commentRepository.findCommentById(
+      Number(commentId),
+    );
+    if (!foundComment)
       throw new DomainException({
         code: DomainExceptionCode.NotFound,
         field: 'commentId',
         message: 'Comment not found',
       });
-    }
-
-    let myStatus: LikeDislikeStatus = LikeDislikeStatus.none;
-    if (!query.userId) {
-      return commentsViewMapperWithCount(foundCommentEntity, myStatus);
-    }
-
-    const foundLikeForComment: LikeEntityForCommentType =
-      await this.likesForCommentRepository.findLikeByUserIdAndCommentId(
-        query.userId,
-        query.commentId,
-      );
-
-    if (!foundLikeForComment) {
-      return commentsViewMapperWithCount(foundCommentEntity, myStatus);
-    }
-    myStatus = foundLikeForComment.status;
-    return commentsViewMapperWithCount(foundCommentEntity, myStatus);
+    return foundComment;
   }
 }

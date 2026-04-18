@@ -1,42 +1,42 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { LikeDislikeStatus } from './posts.entity';
-import { HydratedDocument, Model } from 'mongoose';
+import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { User } from '../../../user-accounts/domain/entities/users.entity';
+import { LikeDislikeStatus } from '../../../../core/types/enumLikeOrDislike.type';
+import { Post } from './posts.entity';
+import { BaseDbEntity } from '../../../../core/entity/baseDb.entity';
 
-// @Schema({ versionKey: false })
-// export class LikeForPostModel {
-//   constructor() {}
-//   @Prop({ type: String, required: true }) userId: string;
-//   @Prop({ type: String, required: true }) login: string;
-//   @Prop({ type: String, required: true }) postId: string;
-//   @Prop({ type: String, enum: LikeDislikeStatus, required: true })
-//   status: LikeDislikeStatus;
-//   @Prop({ type: Date, required: true }) data: Date;
-//
-//   public static createLikeForPost(
-//     postId: string,
-//     likeStatus: LikeDislikeStatus,
-//     user: any,
-//   ): LikeForPostModel {
-//     const newLike = new LikeForPostModel();
-//     newLike.userId = user._id.toString();
-//     newLike.login = user.login;
-//     newLike.postId = postId;
-//     newLike.status = likeStatus;
-//
-//     newLike.data = new Date();
-//
-//     return newLike;
-//   }
-//
-//   updatePostLikeStatus(likeStatus: LikeDislikeStatus) {
-//     this.status = likeStatus;
-//     return;
-//   }
-// }
-// export type LikeForPostDocument = HydratedDocument<LikeForPostModel>;
-//
-// export const LikeForPostSchema = SchemaFactory.createForClass(LikeForPostModel);
-// LikeForPostSchema.loadClass(LikeForPostModel);
-// export interface LikeForPostModelI extends Model<LikeForPostDocument> {
-//   createLikeForPost(dto: any): LikeForPostModel;
-// }
+@Entity({ name: 'LikesForPosts' })
+export class LikeForPost extends BaseDbEntity {
+  @Column({ type: 'integer' })
+  userId: number;
+
+  @Column({ type: 'integer' })
+  postId: number;
+
+  @Column({ type: 'varchar' })
+  login: string;
+
+  @Column({ type: 'enum', enum: LikeDislikeStatus })
+  status: LikeDislikeStatus;
+
+  @ManyToOne(() => Post, (post) => post.likes, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'postId' })
+  post: Post;
+
+  public static createLikeForPost(
+    postId: number,
+    likeStatus: LikeDislikeStatus,
+    user: User,
+  ): LikeForPost {
+    const newLike = new LikeForPost();
+    newLike.userId = user.id;
+    newLike.postId = postId;
+    newLike.login = user.login;
+    newLike.status = likeStatus;
+    return newLike;
+  }
+
+  updateLikeForPost(likeStatus: LikeDislikeStatus) {
+    this.status = likeStatus;
+    return;
+  }
+}

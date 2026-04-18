@@ -1,13 +1,10 @@
-import { HydratedDocument } from 'mongoose';
 import { IsStringWithTrim } from '../../../../core/decorators/validation/is-string-with-trim';
 import { IsNotEmpty } from 'class-validator';
-
-// export type PostDocument = HydratedDocument<PostModel>;
-export type PostInputDtoType = {
-  title: string;
-  shortDescription: string;
-  content: string;
-};
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import { Blog } from './blogs.entity';
+import { LikeForPost } from './likesForPosts.entity';
+import { BaseDbEntity } from '../../../../core/entity/baseDb.entity';
+import { Comment } from './comments.entity';
 
 export class PostInputDtoValidation {
   @IsNotEmpty()
@@ -36,62 +33,54 @@ export class PostInputDtoValidationForCreate {
   blogId: string;
 }
 
-export enum LikeDislikeStatus {
-  none = 'None',
-  like = 'Like',
-  dislike = 'Dislike',
-}
+@Entity({ name: 'Posts' })
+export class Post extends BaseDbEntity {
+  @Column({ type: 'varchar' })
+  title: string;
 
-// @Schema()
-// export class NewestLikesInfo {
-//   @Prop({ type: Date, default: null }) addedAt: Date | null;
-//   @Prop({ type: String, default: null }) userId: string | null;
-//   @Prop({ type: String, default: null }) login: string | null;
-// }
-//
-// @Schema()
-// export class ExtendedLikesInfo {
-//   @Prop({ type: Number, default: 0 }) likesCount: number;
-//   @Prop({ type: Number, default: 0 }) dislikesCount: number;
-//   @Prop({ type: [NewestLikesInfo], default: [] })
-//   newestLikes: NewestLikesInfo[];
-// }
-//
-// @Schema({ versionKey: false })
-// export class PostModel {
-//   constructor() {}
-//   @Prop({ type: String, required: true }) title: string;
-//   @Prop({ type: String, required: true }) shortDescription: string;
-//   @Prop({ type: String, required: true }) content: string;
-//   @Prop({ type: String, required: true }) blogId: string;
-//   @Prop({ type: String, required: true }) blogName: string;
-//   @Prop({ type: Date, required: true }) createdAt: Date;
-//
-//   public static createPost(
-//     dto: PostInputDtoValidationForCreate,
-//     blogName: string,
-//   ): PostModel {
-//     const newPost = new PostModel();
-//     newPost.title = dto.title;
-//     newPost.shortDescription = dto.shortDescription;
-//     newPost.content = dto.content;
-//     newPost.blogId = dto.blogId;
-//     newPost.blogName = blogName;
-//     newPost.createdAt = new Date();
-//
-//     return newPost;
-//   }
-//
-//   updatePost(postInputDto: PostInputDtoValidationForCreate) {
-//     this.title = postInputDto.title;
-//     this.shortDescription = postInputDto.shortDescription;
-//     this.content = postInputDto.content;
-//     this.blogId = postInputDto.blogId!;
-//   }
-// }
-//
-// export const PostSchema = SchemaFactory.createForClass(PostModel);
-// PostSchema.loadClass(PostModel);
-// export interface PostModelI extends Model<PostDocument> {
-//   createPost(dto: PostInputDtoValidation, blogName: string): PostModel;
-// }
+  @Column({ type: 'varchar' })
+  shortDescription: string;
+
+  @Column({ type: 'varchar' })
+  content: string;
+
+  @Column({ type: 'integer' })
+  blogId: number;
+
+  @ManyToOne(() => Blog, (blog) => blog.posts, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'blogId' })
+  blog: Blog;
+
+  @OneToMany(() => LikeForPost, (like) => like.post)
+  likes: LikeForPost[];
+
+  @OneToMany(() => Comment, (comment) => comment.post)
+  comments: Comment[];
+
+  public static createPost(dto: {
+    title: string;
+    shortDescription: string;
+    content: string;
+    blogId: number;
+  }): Post {
+    const newPost = new Post();
+    newPost.title = dto.title;
+    newPost.shortDescription = dto.shortDescription;
+    newPost.content = dto.content;
+    newPost.blogId = dto.blogId;
+    return newPost;
+  }
+
+  updatePost(dto: {
+    title: string;
+    shortDescription: string;
+    content: string;
+  }) {
+    this.title = dto.title;
+    this.shortDescription = dto.shortDescription;
+    this.content = dto.content;
+  }
+}
+export class PostWithBlogName extends Post {
+  blogName: string;
+}

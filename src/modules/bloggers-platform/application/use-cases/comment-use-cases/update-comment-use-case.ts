@@ -4,13 +4,13 @@ import { CommentsService } from '../../comments.service';
 import { DomainException } from '../../../../../core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from '../../../../../core/exceptions/domain-exception-codes';
 import { CommentsRepository } from '../../../repositories/commentsRepositories/comments.repository';
-import { CommentEntityType } from '../../../../user-accounts/repositories/entity-types/comment/commentEntity.type';
+import { Comment } from '../../../domain/entities/comments.entity';
 
 export class UpdateCommentCommand {
   constructor(
     public commentId: string,
     public content: string,
-    public userId: string,
+    public userId: number,
   ) {}
 }
 
@@ -21,19 +21,30 @@ export class UpdateCommentUseCase implements ICommandHandler<UpdateCommentComman
     @Inject(CommentsRepository) private commentsRepository: CommentsRepository,
   ) {}
   async execute(command: UpdateCommentCommand): Promise<void> {
-    const foundComment: CommentEntityType =
-      await this.commentsService.findCommentById(command.commentId);
-    if (foundComment.userId !== +command.userId) {
+    const foundComment = await this.findCommentById(command.commentId);
+
+    if (foundComment.userId !== command.userId)
       throw new DomainException({
         code: DomainExceptionCode.Forbidden,
-        field: 'jwtToken',
-        message: 'You dont have permission to update a comment',
+        field: 'jwtToke',
+        message: "'You dont have permission to update a comment'",
       });
-    }
-    await this.commentsRepository.updateComment(
-      command.commentId,
-      command.content,
-    );
+
+    foundComment.updateComment(command.content);
+
+    await this.commentsRepository.save(foundComment);
     return;
+  }
+  private async findCommentById(commentId: string): Promise<Comment> {
+    const foundComment = await this.commentsRepository.findCommentById(
+      Number(commentId),
+    );
+    if (!foundComment)
+      throw new DomainException({
+        code: DomainExceptionCode.NotFound,
+        field: 'commentId',
+        message: 'Comment not found',
+      });
+    return foundComment;
   }
 }
