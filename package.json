@@ -18,6 +18,10 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
+    "generate-migration": "cross-env NODE_ENV=development typeorm-ts-node-commonjs migration:generate -d ./src/migrations-data-source.ts ./src/migrations/delete_user_add_jopuBobra",
+    "add-empty-migration": "cross-env NODE_ENV=development && typeorm-ts-node-commonjs migration:create ./src/migrations/empty",
+    "apply-migrations": "cross-env NODE_ENV=development typeorm-ts-node-commonjs migration:run -d ./src/migrations-data-source.ts",
+    "revert-migration": "cross-env NODE_ENV=development typeorm-ts-node-commonjs migration:revert -d ./src/migrations-data-source.ts",
     "hw": "ssh -R 80:localhost:5002 nokey@localhost.run"
   },
   "dependencies": {
