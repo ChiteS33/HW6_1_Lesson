@@ -2,13 +2,9 @@ import { InputQueryPaginationTypeWithSearchName } from '../../../../../core/pagi
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { Inject } from '@nestjs/common';
 import { PostsQueryRepository } from '../../../repositories/postsRepositories/posts.queryRepository';
-import {
-  paginationValuesForRepo,
-  paginationValuesMakerMapper,
-} from '../../../../../core/mappers/paginationValuesMakerMapper';
+import { paginationValuesMakerMapper } from '../../../../../core/mappers/paginationValuesMakerMapper';
 import { postViewMapperWithNewestLikes } from '../../../mappers/post/postViewMapperWithNewestLikes';
 import { PostViewWithLikesType } from '../../../api/view-types/posts/postViewWithLikes.type';
-import { postViewWithPagination } from '../../../mappers/post/postViewMapperWithPagination';
 import { PostWithBlogName } from '../../../domain/entities/posts.entity';
 import { PostsRepository } from '../../../repositories/postsRepositories/posts.repository';
 import { paginationViewMapper } from '../blogSa-query-handlers/get-allPostsByBlogIdSa-query-handler';
@@ -17,6 +13,8 @@ import { BlogsRepository } from '../../../repositories/blogsRepositories/blogs.r
 import { DomainException } from '../../../../../core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from '../../../../../core/exceptions/domain-exception-codes';
 import { FinalViewWithPaginationType } from '../../../../../core/types/finalViewWithPagination.type';
+import { viewMapperWithPagination } from '../../../../quiz-game/aplication/query-handler/quizQuestions-query-handlers/get-allQuizQuestions-query-handler';
+import { paginationValuesForRepo } from '../../../../../core/types/paginationValueForRepo.type';
 
 export class GetAllPostsByBlogIdQuery {
   constructor(
@@ -105,7 +103,7 @@ export class GetAllPostsByBlogIdQueryHandler implements IQueryHandler<GetAllPost
       foundAllPosts.totalCount,
     );
 
-    return postViewWithPagination(postViews, params);
+    return viewMapperWithPagination(postViews, params);
   }
   private async findBlogById(blogId: string): Promise<Blog> {
     const foundBlog = await this.blogsRepository.findBlogByBlogId(

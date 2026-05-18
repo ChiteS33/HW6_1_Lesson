@@ -11,8 +11,9 @@ export class UsersService {
   ) {}
 
   async findUserById(userId: string): Promise<User> {
-    const foundedUser: User | null =
-      await this.usersRepository.findUserById(userId);
+    const foundedUser: User | null = await this.usersRepository.findUserById(
+      Number(userId),
+    );
     if (!foundedUser) {
       throw new DomainException({
         code: DomainExceptionCode.NotFound,

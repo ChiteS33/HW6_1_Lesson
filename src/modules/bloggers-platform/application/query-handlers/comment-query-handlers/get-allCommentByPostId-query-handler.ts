@@ -6,18 +6,16 @@ import { PostsRepository } from '../../../repositories/postsRepositories/posts.r
 import { Post } from '../../../domain/entities/posts.entity';
 import { DomainException } from '../../../../../core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from '../../../../../core/exceptions/domain-exception-codes';
-import {
-  paginationValuesForRepo,
-  paginationValuesMakerMapper,
-} from '../../../../../core/mappers/paginationValuesMakerMapper';
+import { paginationValuesMakerMapper } from '../../../../../core/mappers/paginationValuesMakerMapper';
 
 import { CommentsQueryRepository } from '../../../repositories/commentsRepositories/comments.queryRepository';
 import { CommentsRepository } from '../../../repositories/commentsRepositories/comments.repository';
 import { Comment } from '../../../domain/entities/comments.entity';
 import { commentsViewMapperWithCount } from '../../../mappers/comment/commentsViewMapperWithCount';
 import { paginationViewMapper } from '../blogSa-query-handlers/get-allPostsByBlogIdSa-query-handler';
-import { commentsViewMapperWithPagination } from '../../../mappers/comment/commentsViewMapperWithPagination';
 import { CommentViewType } from '../../../api/view-types/comments/commentView.type';
+import { viewMapperWithPagination } from '../../../../quiz-game/aplication/query-handler/quizQuestions-query-handlers/get-allQuizQuestions-query-handler';
+import { paginationValuesForRepo } from '../../../../../core/types/paginationValueForRepo.type';
 
 export class FindAllCommentsByPostIdQuery {
   constructor(
@@ -88,7 +86,7 @@ export class FindAllCommentsByPostIdQueryHandler implements IQueryHandler<FindAl
       paginationValues,
       foundAllComments.totalCount,
     );
-    return commentsViewMapperWithPagination(commentViews, params);
+    return viewMapperWithPagination(commentViews, params);
   }
 
   private async findPostById(postId: string): Promise<Post> {

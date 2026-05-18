@@ -2,11 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { PaginationWithSearchLoginTermAndSearchEMailTermForRepo } from '../../../../core/types/PaginationWithSearchLoginTermAndSearchEMailTermForRepo.type';
-import { userViewMapper } from '../../mappers/user/userViewMapper';
-import { DomainExceptionCode } from '../../../../core/exceptions/domain-exception-codes';
-import { DomainException } from '../../../../core/exceptions/domain-exceptions';
-import { UserEntityType } from '../entity-types/user/userEntity.type';
-import { UserViewType } from '../../api/view-types/user/userView.type';
 import { User } from '../../domain/entities/users.entity';
 
 @Injectable()
@@ -45,19 +40,10 @@ export class UsersQueryRepository {
     return { foundUsers, totalCount };
   }
 
-  async findUserByUserId(userId: string): Promise<UserViewType> {
-    const foundUser: UserEntityType[] = await this.datasource.query(
-      `SELECT "id", "login", "email", "createdAt"
-      FROM "Users" WHERE id = $1`,
-      [userId],
-    );
-    if (!foundUser[0]) {
-      throw new DomainException({
-        code: DomainExceptionCode.NotFound,
-        field: 'userId',
-        message: 'User not found',
-      });
-    }
-    return userViewMapper(foundUser[0]);
+  async findUserByUserId(userId: number): Promise<User | null> {
+    return this.userRepository
+      .createQueryBuilder('user')
+      .where('user.id= :userId', { userId })
+      .getOne();
   }
 }

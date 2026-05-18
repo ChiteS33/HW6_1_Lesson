@@ -16,9 +16,9 @@ export class UsersRepository {
     return savedUser.id.toString();
   }
 
-  async findUserById(userId: string): Promise<User | null> {
+  async findUserById(userId: number): Promise<User | null> {
     const foundUser = await this.userRepository.findOne({
-      where: { id: Number(userId) },
+      where: { id: userId },
     });
     return foundUser ?? null;
   }

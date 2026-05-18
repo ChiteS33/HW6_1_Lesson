@@ -2,16 +2,14 @@ import { InputQueryPaginationTypeWithSearchName } from '../../../../../core/pagi
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { Inject } from '@nestjs/common';
 import { PostsQueryRepository } from '../../../repositories/postsRepositories/posts.queryRepository';
-import {
-  paginationValuesForRepo,
-  paginationValuesMakerMapper,
-} from '../../../../../core/mappers/paginationValuesMakerMapper';
-import { postViewWithPagination } from '../../../mappers/post/postViewMapperWithPagination';
+import { paginationValuesMakerMapper } from '../../../../../core/mappers/paginationValuesMakerMapper';
 import { PostWithBlogName } from '../../../domain/entities/posts.entity';
 import { PostViewWithLikesType } from '../../../api/view-types/posts/postViewWithLikes.type';
 import { PostsRepository } from '../../../repositories/postsRepositories/posts.repository';
 import { postViewMapperWithNewestLikes } from '../../../mappers/post/postViewMapperWithNewestLikes';
 import { paginationViewMapper } from '../blogSa-query-handlers/get-allPostsByBlogIdSa-query-handler';
+import { viewMapperWithPagination } from '../../../../quiz-game/aplication/query-handler/quizQuestions-query-handlers/get-allQuizQuestions-query-handler';
+import { paginationValuesForRepo } from '../../../../../core/types/paginationValueForRepo.type';
 
 export class GetAllPostsQuery {
   constructor(
@@ -92,6 +90,6 @@ export class GetAllPostsQueryHandler implements IQueryHandler<GetAllPostsQuery> 
       foundAllPosts.totalCount,
     );
 
-    return postViewWithPagination(postViews, params);
+    return viewMapperWithPagination(postViews, params);
   }
 }

@@ -21,6 +21,7 @@ import { UserViewType } from './view-types/user/userView.type';
 import { FinalViewWithPaginationType } from '../../../core/types/finalViewWithPagination.type';
 import { UserInputDtoValidation } from '../validation/inputValidationBody.validation';
 import { GetAllUsersQuery } from '../application/query-handler/user-query-hanlder/get-allUsers-query-handler';
+import { GetUserByIdQuery } from '../application/query-handler/user-query-hanlder/get_userById_query_handler';
 
 @Controller(`sa/users`)
 export class UsersController {
@@ -47,7 +48,7 @@ export class UsersController {
     const createdUserId: string = await this.commandBus.execute(
       new CreateUserCommand(userInputDto),
     );
-    return this.usersQueryRepository.findUserByUserId(createdUserId);
+    return await this.queryBus.execute(new GetUserByIdQuery(createdUserId));
   }
 
   @UseGuards(BasicAuthGuard)

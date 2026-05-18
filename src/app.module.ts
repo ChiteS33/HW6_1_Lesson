@@ -10,6 +10,7 @@ import { BlogsModule } from './modules/bloggers-platform/bloggers-platform.modul
 import { AllHttpExceptionsFilter } from './core/exceptions/filters/all-exceptions.filter';
 import { DomainHttpExceptionsFilter } from './core/exceptions/filters/domain-exceptions.filter';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { QuizGameModule } from './modules/quiz-game/quiz-game.module';
 
 const errorFilters = [
   {
@@ -36,7 +37,7 @@ const errorFilters = [
         password: configService.get('POSTGRES_PASSWORD'),
         database: configService.get('POSTGRES_DATABASE'),
         autoLoadEntities: true,
-        synchronize: false,
+        synchronize: true,
         extra: {
           charset: 'utf8',
         },
@@ -54,6 +55,7 @@ const errorFilters = [
     ]),
     UserAccountsModule,
     BlogsModule,
+    QuizGameModule,
   ],
   providers: [...errorFilters],
   exports: [],

@@ -30,7 +30,7 @@ export class JwtAdapter {
     // });
 
     return jwt.sign({ userId }, settings.JWT_SECRET, {
-      expiresIn: '10m',
+      expiresIn: '2h',
     });
   }
 
@@ -39,7 +39,7 @@ export class JwtAdapter {
     deviceId: string = Math.floor(Math.random() * 1000000000).toString(),
   ): string {
     const payload = { userId: userId, deviceId: deviceId };
-    return jwt.sign(payload, settings.JWT_REFRESH_TOKEN, { expiresIn: '20m' });
+    return jwt.sign(payload, settings.JWT_REFRESH_TOKEN, { expiresIn: '2h' });
   }
 
   verifyRefreshToken(token: string): Payload {

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Post, PostWithBlogName } from '../../domain/entities/posts.entity';
-import { paginationValuesForRepo } from '../../../../core/mappers/paginationValuesMakerMapper';
+import { paginationValuesForRepo } from '../../../../core/types/paginationValueForRepo.type';
 
 @Injectable()
 export class PostsQueryRepository {

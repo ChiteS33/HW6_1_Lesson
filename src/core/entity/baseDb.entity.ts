@@ -14,7 +14,7 @@ export class BaseDbEntity {
   @CreateDateColumn({ type: 'timestamp with time zone' })
   createdAt: Date;
 
-  @UpdateDateColumn({ type: 'timestamp with time zone' })
+  @UpdateDateColumn({ type: 'timestamp with time zone', nullable: true })
   updatedAt: Date;
 
   @DeleteDateColumn({ type: 'timestamp with time zone', nullable: true })

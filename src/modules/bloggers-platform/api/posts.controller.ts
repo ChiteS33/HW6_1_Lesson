@@ -5,7 +5,6 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  Inject,
   Param,
   Post,
   Put,
@@ -26,7 +25,6 @@ import { CreatePostCommand } from '../application/use-cases/post-use-cases/creat
 import { UpdatePostCommand } from '../application/use-cases/post-use-cases/update-post-use-case';
 import { DeletePostCommand } from '../application/use-cases/post-use-cases/delete-post-use-case';
 import { InputQueryPaginationTypeWithSearchName } from '../../../core/pagination/inputQueryPaginationTypeWithSearchName';
-import { CommentsQueryRepository } from '../repositories/commentsRepositories/comments.queryRepository';
 import { GetAllPostsQuery } from '../application/query-handlers/post-query-handlers/get-allPosts-query-handler';
 import { PostViewType } from './view-types/posts/postView.type';
 import { FinalViewWithPaginationType } from '../../../core/types/finalViewWithPagination.type';
@@ -44,8 +42,6 @@ export class PostsController {
   constructor(
     private commandBus: CommandBus,
     private queryBus: QueryBus,
-    @Inject(CommentsQueryRepository)
-    private commentsQueryRepository: CommentsQueryRepository,
   ) {}
 
   @UseGuards(BearerGuard)

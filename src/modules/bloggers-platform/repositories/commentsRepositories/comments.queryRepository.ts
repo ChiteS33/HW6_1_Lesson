@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { paginationValuesForRepo } from '../../../../core/mappers/paginationValuesMakerMapper';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { Comment } from '../../domain/entities/comments.entity';
+import { paginationValuesForRepo } from '../../../../core/types/paginationValueForRepo.type';
 
 @Injectable()
 export class CommentsQueryRepository {

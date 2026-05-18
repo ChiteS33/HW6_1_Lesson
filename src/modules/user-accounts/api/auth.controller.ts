@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { SkipThrottle, ThrottlerGuard } from '@nestjs/throttler';
 import { InputValidationEmail } from '../validation/inputValidationEmail.validation';
 import { RecoveryPasswordCommand } from '../application/use-cases/auth-use-cases/recovery-password-use-case';
 import { ConfirmPasswordRecoveryCommand } from '../application/use-cases/auth-use-cases/confirm-password-use-case';
@@ -32,7 +32,7 @@ import { ViewAboutMeType } from './view-types/auth/authViewAboutMe.type';
 import { UserInputDtoValidation } from '../validation/inputValidationBody.validation';
 import { InfoAboutMeQuery } from '../application/query-handler/auth-query-handler/get-infoAboutMe-query-handler';
 import { User } from '../domain/entities/users.entity';
-
+@SkipThrottle()
 @Controller('auth')
 export class AuthController {
   constructor(

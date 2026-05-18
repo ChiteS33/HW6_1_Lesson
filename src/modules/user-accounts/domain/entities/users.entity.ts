@@ -1,7 +1,8 @@
-import { Column, Entity } from 'typeorm';
+import { Column, Entity, OneToMany } from 'typeorm';
 import { add } from 'date-fns';
 import { UserInputDtoValidation } from '../../validation/inputValidationBody.validation';
 import { BaseDbEntity } from '../../../../core/entity/baseDb.entity';
+import { Player } from '../../../quiz-game/domain/entities/quiz_players.entity';
 
 @Entity({ name: 'Users' })
 export class User extends BaseDbEntity {
@@ -25,6 +26,9 @@ export class User extends BaseDbEntity {
 
   @Column({ type: 'boolean' })
   isConfirmed: boolean;
+
+  @OneToMany(() => Player, (player) => player.user)
+  players: Player[];
 
   public static createUserByAdmin(
     inputDto: UserInputDtoValidation,

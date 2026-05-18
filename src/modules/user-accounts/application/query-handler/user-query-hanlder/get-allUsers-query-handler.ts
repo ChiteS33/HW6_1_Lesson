@@ -6,10 +6,10 @@ import { UsersQueryRepository } from '../../../repositories/userRepositories/use
 import { InPutPaginationWithSearchLoginTermAndSearchEMailTerm } from '../../../../../core/types/inputPaginationDtoWithSearchTerms.type';
 import { PaginationWithSearchLoginTermAndSearchEMailTermForRepo } from '../../../../../core/types/PaginationWithSearchLoginTermAndSearchEMailTermForRepo.type';
 import { paginationValuesMakerWithSearchLoginAndEmailMapper } from '../../../../../core/mappers/paginationValuesMakerWithSearchLoginAndEmailMapper';
-import { userViewMapperWithPagination } from '../../../mappers/user/userViewMapperWithPagination';
 import { PaginationViewType } from '../../../../../core/types/paginationViewType';
 import { userViewMapper } from '../../../mappers/user/userViewMapper';
 import { User } from '../../../domain/entities/users.entity';
+import { viewMapperWithPagination } from '../../../../quiz-game/aplication/query-handler/quizQuestions-query-handlers/get-allQuizQuestions-query-handler';
 
 export class GetAllUsersQuery {
   constructor(
@@ -43,6 +43,6 @@ export class GetAllUsersQueryHandler implements IQueryHandler<GetAllUsersQuery> 
     const mappedUsers: UserViewType[] =
       foundUsers.foundUsers.map(userViewMapper);
 
-    return userViewMapperWithPagination(mappedUsers, params);
+    return viewMapperWithPagination(mappedUsers, params);
   }
 }

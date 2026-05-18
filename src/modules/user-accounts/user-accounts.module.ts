@@ -38,6 +38,10 @@ import { User } from './domain/entities/users.entity';
 import { Session } from './domain/entities/sessions.entity';
 import { FindAllSessionsQueryHandler } from './application/query-handler/session-query-handler/find-sessions-query-handler';
 import { SessionsQueryRepository } from './repositories/sessionRepositories/sessions.queryRepository';
+import {
+  GetUserByIdQuery,
+  GetUserByIdQueryHandler,
+} from './application/query-handler/user-query-hanlder/get_userById_query_handler';
 
 const services = [UsersService, AuthService, SessionsService];
 const repositories = [UsersRepository, SessionsRepository];
@@ -58,7 +62,7 @@ const authUseCases = [
   RefreshTokensUseCase,
 ];
 const authQueryHandlers = [InfoAboutMeQueryHandler];
-const usersQueryHandlers = [GetAllUsersQueryHandler];
+const usersQueryHandlers = [GetAllUsersQueryHandler, GetUserByIdQueryHandler];
 const sessionsQueryHandler = [FindAllSessionsQueryHandler];
 const controllers = [UsersController, AuthController, SessionsController];
 const errorStrategies = [

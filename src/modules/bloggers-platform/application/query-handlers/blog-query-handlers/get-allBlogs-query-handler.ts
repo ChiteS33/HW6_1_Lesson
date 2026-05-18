@@ -6,8 +6,8 @@ import { FinalViewWithPaginationType } from '../../../../../core/types/finalView
 import { BlogViewType } from '../../../api/view-types/blogs/blogView.type';
 import { paginationValuesMakerWithSearchNameTermMapper } from '../../../../../core/mappers/paginationValuesMakerWithSearchNameTermMapper';
 import { PaginationViewType } from '../../../../../core/types/paginationViewType';
-import { blogViewMapperWithPagination } from 'src/modules/bloggers-platform/mappers/blog/blogViewMapperWithPagination';
 import { blogViewMapper } from '../../../mappers/blog/blogViewMapper';
+import { viewMapperWithPagination } from '../../../../quiz-game/aplication/query-handler/quizQuestions-query-handlers/get-allQuizQuestions-query-handler';
 
 export class GetAllBlogsQuery {
   constructor(public query: InputQueryPaginationTypeWithSearchName) {}
@@ -35,7 +35,7 @@ export class GetAllBlogsQueryHandlers implements IQueryHandler<GetAllBlogsQuery>
       totalCount: foundBlogs.totalCount,
     };
 
-    return blogViewMapperWithPagination(
+    return viewMapperWithPagination(
       foundBlogs.foundBlogs.map(blogViewMapper),
       params,
     );

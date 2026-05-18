@@ -1,5 +1,6 @@
 import { InputQueryPaginationTypeWithSearchName } from '../pagination/inputQueryPaginationTypeWithSearchName';
 import { SortDirection } from '../types/enumSortDirection.type';
+import { paginationValuesForRepo } from '../types/paginationValueForRepo.type';
 
 export const paginationValuesMakerMapper = (
   pagination: InputQueryPaginationTypeWithSearchName,
@@ -12,11 +13,4 @@ export const paginationValuesMakerMapper = (
       ? pagination.sortDirection
       : SortDirection.DESC,
   };
-};
-
-export type paginationValuesForRepo = {
-  pageNumber: number;
-  pageSize: number;
-  sortBy: string;
-  sortDirection: SortDirection;
 };
